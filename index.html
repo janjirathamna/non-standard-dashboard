@@ -14,17 +14,17 @@
         body { font-family: 'Prompt', sans-serif; }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800">
+<body class="bg-gray-100 text-gray-800 min-h-screen">
 
     <!-- Navbar -->
     <header class="bg-slate-900 text-white shadow-lg sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-wrap justify-between items-center gap-4">
-            <h1 class="text-xl font-bold tracking-wide" id="ui-title">📊 3-Factory Advanced Issue Dashboard / 三厂设备故障分析系统</h1>
-            <div class="flex items-center gap-3">
-                <a id="btn-add-data" href="https://docs.google.com/spreadsheets/d/1WzJHUFbjMDLKLfQ_uhiPR2o03y_cvBrWBEGtgKe2cTM/edit?gid=1012980436#gid=1012980436" target="_blank" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-1.5 rounded-lg text-sm font-medium transition shadow-sm flex items-center gap-1.5">
+        <div class="max-w-[1600px] mx-auto px-6 py-5 flex flex-wrap justify-between items-center gap-4">
+            <h1 class="text-2xl font-bold tracking-wide" id="ui-title">📊 3-Factory Advanced Issue Dashboard / 三厂设备故障分析系统</h1>
+            <div class="flex items-center gap-4">
+                <a id="btn-add-data" href="https://docs.google.com/spreadsheets/d/1WzJHUFbjMDLKLfQ_uhiPR2o03y_cvBrWBEGtgKe2cTM/edit?gid=1012980436#gid=1012980436" target="_blank" class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-base font-medium transition shadow-md flex items-center gap-2">
                     ➕ <span id="btn-add-data-text">Add Data / 添加数据</span>
                 </a>
-                <button onclick="toggleLang()" class="bg-blue-600 hover:bg-blue-500 px-4 py-1.5 rounded-lg text-sm font-medium transition shadow-sm">
+                <button onclick="toggleLang()" class="bg-blue-600 hover:bg-blue-500 px-5 py-2.5 rounded-xl text-base font-medium transition shadow-md">
                     🌐 <span id="lang-btn-text">中文 / EN</span>
                 </button>
             </div>
@@ -32,75 +32,75 @@
     </header>
 
     <!-- Main Container -->
-    <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
+    <main class="max-w-[1600px] mx-auto px-6 py-8 space-y-8">
 
-        <!-- Global Controls Bar (Filters & Date Range) -->
-        <div class="bg-white p-4 rounded-xl shadow-sm flex flex-wrap justify-between items-center gap-4">
-            <div class="flex flex-wrap items-center gap-4">
+        <!-- Global Controls Bar -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm flex flex-wrap justify-between items-center gap-6">
+            <div class="flex flex-wrap items-center gap-6">
                 <div>
-                    <label class="text-xs font-semibold text-gray-500 block mb-1" id="label-start-date">Start Date / 开始日期:</label>
-                    <input type="date" id="startDate" onchange="filterAndRender()" class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <label class="text-sm font-semibold text-gray-500 block mb-1.5" id="label-start-date">Start Date / 开始日期:</label>
+                    <input type="date" id="startDate" onchange="filterAndRender()" class="border border-gray-300 rounded-xl px-4 py-2 text-base focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
                 <div>
-                    <label class="text-xs font-semibold text-gray-500 block mb-1" id="label-end-date">End Date / 结束日期:</label>
-                    <input type="date" id="endDate" onchange="filterAndRender()" class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <label class="text-sm font-semibold text-gray-500 block mb-1.5" id="label-end-date">End Date / 结束日期:</label>
+                    <input type="date" id="endDate" onchange="filterAndRender()" class="border border-gray-300 rounded-xl px-4 py-2 text-base focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
                 <div class="flex items-end">
-                    <button onclick="resetFilters()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1.5 rounded-lg text-sm transition" id="btn-reset">
+                    <button onclick="resetFilters()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-5 py-2 rounded-xl text-base transition font-medium" id="btn-reset">
                         Reset / 重置
                     </button>
                 </div>
             </div>
             <div>
-                <button onclick="window.print()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm flex items-center gap-2" id="btn-export">
+                <button onclick="window.print()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2.5 rounded-xl text-base font-medium transition shadow-md flex items-center gap-2" id="btn-export">
                     📥 Print Report / 打印报告
                 </button>
             </div>
         </div>
 
-        <!-- 3-Column Overview Layout (As per Image 1 sketch) -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6" id="three-factory-container">
-            <!-- Injected dynamically for Terahop 5000, Pinewave, Ayutthaya -->
+        <!-- 3-Column Overview Layout -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8" id="three-factory-container">
+            <!-- Injected dynamically -->
         </div>
 
     </main>
 
-    <!-- Detail Modal (As per Image 2 sketch) -->
-    <div id="detailModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
-        <div class="bg-white w-full max-w-6xl rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
-            <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center">
-                <h3 id="modalTitle" class="text-lg font-bold">Factory Details</h3>
-                <button onclick="closeModal()" class="text-gray-400 hover:text-white text-xl font-bold">&times;</button>
+    <!-- Detail Modal -->
+    <div id="detailModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-6 overflow-y-auto">
+        <div class="bg-white w-full max-w-7xl rounded-3xl shadow-2xl overflow-hidden my-auto flex flex-col max-h-[92vh]">
+            <div class="bg-slate-900 text-white px-8 py-5 flex justify-between items-center">
+                <h3 id="modalTitle" class="text-2xl font-bold">Factory Details</h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-white text-3xl font-bold">&times;</button>
             </div>
-            <div class="p-6 overflow-y-auto space-y-6">
-                <!-- Chart Section -->
-                <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                    <div class="flex justify-between items-center mb-3">
-                        <h4 class="font-semibold text-gray-700" id="modalChartTitle">Machine Issue Frequency Breakdown</h4>
-                        <button onclick="exportChartImage()" class="bg-teal-600 hover:bg-teal-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
+            <div class="p-8 overflow-y-auto space-y-8 flex-1">
+                <!-- Chart Section (คงความสูงเดิมตามที่คุณต้องการ) -->
+                <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="font-bold text-lg text-gray-700" id="modalChartTitle">Machine Issue Frequency Breakdown (Ascending / น้อยไปมาก)</h4>
+                        <button onclick="exportChartImage()" class="bg-teal-600 hover:bg-teal-500 text-white px-4 py-2 rounded-xl text-sm font-medium transition shadow-sm flex items-center gap-2">
                             📊 Export Chart PNG
                         </button>
                     </div>
-                    <div class="relative w-full" style="height: 350px;">
+                    <div class="relative w-full" id="modalChartWrapper" style="height: 450px;">
                         <canvas id="modalDetailChart"></canvas>
                     </div>
                 </div>
-                <!-- Table Section -->
-                <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-                    <div class="px-4 py-3 bg-gray-50 border-b font-semibold text-gray-700 text-sm" id="modalTableTitle">
-                        Full Issue Log & Daily Breakdown
+
+                <!-- Table Section (ปรับให้แสดงผลได้หลายบรรทัด ยาวขึ้น ไม่จำกัดพื้นที่สั้นๆ) -->
+                <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                    <div class="px-6 py-4 bg-gray-100 border-b font-bold text-gray-700 text-base" id="modalTableTitle">
+                        Full Issue Log & Frequency Breakdown (Grouped by Machine)
                     </div>
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse text-sm">
+                        <table class="w-full text-left border-collapse text-base">
                             <thead>
-                                <tr class="bg-gray-100 text-gray-600 border-b text-xs uppercase">
-                                    <th class="p-3" id="th-modal-mach">Machine / 机器</th>
-                                    <th class="p-3" id="th-modal-issue">Issue / 故障现象</th>
-                                    <th class="p-3" id="th-modal-count">Total / 次数</th>
-                                    <th class="p-3" id="th-modal-time">Timestamps / 时间记录</th>
+                                <tr class="bg-gray-200 text-gray-700 border-b text-sm uppercase">
+                                    <th class="p-4 border-r border-gray-300 w-1/4" id="th-modal-mach">Machine / 机器</th>
+                                    <th class="p-4 border-r border-gray-300 w-1/2" id="th-modal-issue">Issue / 故障现象</th>
+                                    <th class="p-4 text-center w-1/4" id="th-modal-count">Repeat Count / 发生次数 (น้อย ➔ มาก)</th>
                                 </tr>
                             </thead>
-                            <tbody id="modalTableBody" class="divide-y divide-gray-100">
+                            <tbody id="modalTableBody" class="divide-y divide-gray-200">
                                 <!-- Injected via JS -->
                             </tbody>
                         </table>
@@ -111,8 +111,7 @@
     </div>
 
     <script>
-        // 📌 ใส่ Web App URL ของ Google Apps Script ของคุณที่นี่
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxNht563H7COeUnwfF4NUImMsv3bFGoIpiHsE4h1tTrPFemxnskTOBsCw02zQ-ts7G8/exec";
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyJqyrQMWebqeIyd6OTN-F3GYhsCv1a7QhuYDdp9PIGyItv7vRHvypjBlXen5GH9FnN/exec";
 
         let currentLang = 'EN';
         let rawData = [];
@@ -127,15 +126,11 @@
                 endDate: "End Date:",
                 reset: "Reset",
                 exportBtn: "📥 Print Report",
-                top3Title: "Top 3 Frequent Issues",
+                top3Title: "Top Issues (Ascending / น้อยไปมาก)",
                 detailsBtn: "Details / 详情 ➔",
                 totalIssues: "Total Issues",
-                modalChartTitle: "Machine Issue Frequency Breakdown",
-                modalTableTitle: "Full Issue Log & Daily Breakdown",
-                thMach: "Machine",
-                thIssue: "Issue",
-                thCount: "Total",
-                thTime: "Timestamps"
+                modalChartTitle: "Machine Issue Frequency Breakdown (Ascending / น้อยไปมาก)",
+                modalTableTitle: "Full Issue Log & Frequency Breakdown (Grouped by Machine)",
             },
             CN: {
                 title: "📊 三厂高级设备故障分析系统",
@@ -144,15 +139,11 @@
                 endDate: "结束日期:",
                 reset: "重置",
                 exportBtn: "📥 打印报告",
-                top3Title: "Top 3 高频故障汇总",
+                top3Title: "故障汇总 (从小到大)",
                 detailsBtn: "详情 ➔",
                 totalIssues: "总故障数",
-                modalChartTitle: "各机器故障现象及发生频次明细",
-                modalTableTitle: "完整故障记录与每日明细",
-                thMach: "机器名称",
-                thIssue: "故障现象",
-                thCount: "总次数",
-                thTime: "时间记录"
+                modalChartTitle: "各机器故障现象及发生频次明细 (从小到大)",
+                modalTableTitle: "完整故障记录与发生次数明细 (合并机器)",
             }
         };
 
@@ -189,7 +180,7 @@
         }
 
         function filterCurrentData() {
-            const startDate = document.getElementById('startDate').value;
+	        const startDate = document.getElementById('startDate').value;
             const endDate = document.getElementById('endDate').value;
 
             return rawData.filter(d => {
@@ -217,7 +208,6 @@
             factories.forEach(factoryName => {
                 const factoryData = data.filter(d => d.Factory === factoryName);
                 
-                // Group top 3 issues per factory
                 const groupData = {};
                 factoryData.forEach(d => {
                     const mach = currentLang === 'EN' ? (d.MappedMachineName_EN || d.RawMachineName) : (d.MappedMachineName_CN || d.RawMachineName);
@@ -226,67 +216,63 @@
                     groupData[mach][issue] = (groupData[mach][issue] || 0) + 1;
                 });
 
-                let top3RowsHtml = '';
-                let rowCounter = 0;
+                let topRowsHtml = '';
 
                 Object.keys(groupData).forEach(mach => {
-                    let sorted = Object.entries(groupData[mach]).map(([issue, count]) => ({ issue, count })).sort((a,b) => b.count - a.count);
-                    let top3 = sorted.slice(0, 3);
-                    top3.forEach((item, idx) => {
-                        rowCounter++;
-                        top3RowsHtml += `
-                            <tr class="hover:bg-gray-50 text-xs">
-                                <td class="p-2 font-semibold text-gray-800">${mach}</td>
-                                <td class="p-2 text-red-600">${item.issue}</td>
-                                <td class="p-2 font-bold text-center">${item.count}</td>
+                    let sorted = Object.entries(groupData[mach])
+                        .map(([issue, count]) => ({ issue, count }))
+                        .sort((a,b) => a.count - b.count);
+
+                    sorted.forEach(item => {
+                        topRowsHtml += `
+                            <tr class="hover:bg-gray-50 text-sm">
+                                <td class="p-3 font-semibold text-gray-800">${mach}</td>
+                                <td class="p-3 text-red-600 font-medium">${item.issue}</td>
+                                <td class="p-3 font-bold text-center text-blue-900">${item.count}</td>
                             </tr>
                         `;
                     });
                 });
 
                 container.innerHTML += `
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex flex-col justify-between space-y-4">
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 flex flex-col justify-between space-y-6">
                         <div>
-                            <div class="flex justify-between items-center border-b pb-2 mb-3">
-                                <h3 class="font-bold text-lg text-slate-800">${factoryName}</h3>
-                                <span class="text-xs bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full font-semibold">${uiText[currentLang].totalIssues}: ${factoryData.length}</span>
+                            <div class="flex justify-between items-center border-b pb-3 mb-4">
+                                <h3 class="font-bold text-xl text-slate-800">${factoryName}</h3>
+                                <span class="text-sm bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full font-bold">${uiText[currentLang].totalIssues}: ${factoryData.length}</span>
                             </div>
                             
-                            <!-- Mini Chart Container -->
-                            <div class="relative w-full mb-4" style="height: 180px;">
+                            <div class="relative w-full mb-6" style="height: 360px;">
                                 <canvas id="chart-${factoryName.replace(/\s+/g, '')}"></canvas>
                             </div>
 
-                            <!-- Top 3 Table -->
-                            <div class="bg-gray-50 rounded-lg p-2 border border-gray-100">
-                                <h4 class="text-xs font-bold text-gray-600 mb-2">${uiText[currentLang].top3Title}</h4>
-                                <div class="overflow-x-auto max-h-40 overflow-y-auto">
+                            <div class="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                                <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">${uiText[currentLang].top3Title}</h4>
+                                <div class="overflow-x-auto max-h-64 overflow-y-auto">
                                     <table class="w-full text-left border-collapse">
                                         <thead>
-                                            <tr class="text-gray-500 text-[10px] uppercase border-b">
-                                                <th class="p-1.5">Machine</th>
-                                                <th class="p-1.5">Top Issue</th>
-                                                <th class="p-1.5 text-center">Qty</th>
+                                            <tr class="text-gray-500 text-xs uppercase border-b">
+                                                <th class="p-2">Machine</th>
+                                                <th class="p-2">Issue</th>
+                                                <th class="p-2 text-center">Qty (น้อย➔มาก)</th>
                                             </tr>
                                         </thead>
                                         <tbody class="divide-y divide-gray-100">
-                                            ${top3RowsHtml || `<tr><td colspan="3" class="p-2 text-center text-xs text-gray-400">No data</td></tr>`}
+                                            ${topRowsHtml || `<tr><td colspan="3" class="p-3 text-center text-sm text-gray-400">No data</td></tr>`}
                                         </tbody>
                                     </table>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Details Button (Bottom Right as per sketch) -->
-                        <div class="flex justify-end pt-2 border-t">
-                            <button onclick="openModal('${factoryName}')" class="bg-slate-800 hover:bg-slate-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-medium transition shadow-sm flex items-center gap-1">
+                        <div class="flex justify-end pt-3 border-t">
+                            <button onclick="openModal('${factoryName}')" class="bg-slate-800 hover:bg-slate-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition shadow-sm flex items-center gap-1.5">
                                 ${uiText[currentLang].detailsBtn}
                             </button>
                         </div>
                     </div>
                 `;
 
-                // Render Mini Chart for each factory card
                 setTimeout(() => renderMiniChart(factoryName, factoryData), 50);
             });
         }
@@ -302,14 +288,18 @@
                 counts[mach] = (counts[mach] || 0) + 1;
             });
 
+            const sortedEntries = Object.entries(counts).sort((a, b) => a[1] - b[1]);
+            const labels = sortedEntries.map(e => e[0]);
+            const values = sortedEntries.map(e => e[1]);
+
             new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: Object.keys(counts),
+                    labels: labels,
                     datasets: [{
-                        data: Object.values(counts),
+                        data: values,
                         backgroundColor: '#3b82f6',
-                        borderRadius: 3
+                        borderRadius: 4
                     }]
                 },
                 options: {
@@ -317,8 +307,8 @@
                     maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
                     scales: {
-                        x: { ticks: { font: { size: 9 } } },
-                        y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 9 } } }
+                        x: { ticks: { font: { size: 11 } } },
+                        y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 11 } } }
                     }
                 }
             });
@@ -338,7 +328,6 @@
         }
 
         function renderModalContent(data) {
-            // Render Horizontal Chart
             const ctx = document.getElementById('modalDetailChart').getContext('2d');
             if (modalChartInstance) modalChartInstance.destroy();
 
@@ -350,15 +339,16 @@
                 mapCounts[key] = (mapCounts[key] || 0) + 1;
             });
 
-            const labels = Object.keys(mapCounts);
-            const values = Object.values(mapCounts);
+            const sortedChartEntries = Object.entries(mapCounts).sort((a, b) => a[1] - b[1]);
+            const labels = sortedChartEntries.map(e => e[0]);
+            const values = sortedChartEntries.map(e => e[1]);
 
             modalChartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'Frequency',
+                        label: 'Frequency (Times)',
                         data: values,
                         backgroundColor: '#0d9488',
                         borderRadius: 4
@@ -371,42 +361,55 @@
                     plugins: { legend: { display: false } },
                     scales: {
                         x: { beginAtZero: true, ticks: { stepSize: 1 } },
-                        y: { ticks: { font: { size: 10 } } }
+                        y: { ticks: { font: { size: 12 } } }
                     }
                 }
             });
 
-            // Render Modal Table
             const tbody = document.getElementById('modalTableBody');
             tbody.innerHTML = '';
 
-            const tableGroup = {};
+            const machineGroups = {};
             data.forEach(d => {
                 const mach = currentLang === 'EN' ? (d.MappedMachineName_EN || d.RawMachineName) : (d.MappedMachineName_CN || d.RawMachineName);
                 const issue = currentLang === 'EN' ? (d.EnglishIssue || d.RawIssue) : (d.ChineseIssue || d.RawIssue);
-                const key = `${mach}___${issue}`;
-                if (!tableGroup[key]) {
-                    tableGroup[key] = { mach, issue, timestamps: [] };
-                }
-                tableGroup[key].timestamps.push(d.Timestamp || '-');
+
+                if (!machineGroups[mach]) machineGroups[mach] = {};
+                machineGroups[mach][issue] = (machineGroups[mach][issue] || 0) + 1;
             });
 
-            Object.values(tableGroup).forEach(item => {
-                tbody.innerHTML += `
-                    <tr class="hover:bg-gray-50 transition">
-                        <td class="p-3 font-semibold text-blue-900">${item.mach}</td>
-                        <td class="p-3 text-red-600 font-medium">${item.issue}</td>
-                        <td class="p-3 font-bold text-center">${item.timestamps.length}</td>
-                        <td class="p-3 text-gray-500 text-xs">${item.timestamps.join(', ')}</td>
-                    </tr>
-                `;
+            Object.keys(machineGroups).forEach(mach => {
+                const sortedIssues = Object.entries(machineGroups[mach])
+                    .map(([issue, count]) => ({ issue, count }))
+                    .sort((a, b) => a.count - b.count);
+
+                const rowspan = sortedIssues.length;
+
+                sortedIssues.forEach((item, index) => {
+                    let trHtml = `<tr class="hover:bg-gray-50 transition border-b border-gray-200">`;
+                    
+                    if (index === 0) {
+                        trHtml += `
+                            <td rowspan="${rowspan}" class="p-4 font-bold text-blue-950 text-lg align-top bg-blue-50/50 border-r border-gray-300">
+                                ${mach}
+                            </td>
+                        `;
+                    }
+
+                    trHtml += `
+                        <td class="p-4 text-red-600 font-medium border-r border-gray-200">${item.issue}</td>
+                        <td class="p-4 font-bold text-gray-800 text-center text-lg bg-gray-50/30">${item.count}</td>
+                    </tr>`;
+
+                    tbody.innerHTML += trHtml;
+                });
             });
         }
 
         function exportChartImage() {
             if (!modalChartInstance) return;
             const link = document.createElement('a');
-            link.download = `${activeFactoryModal}-chart.png`;
+            link.download = `${activeFactoryModal}-chart-ascending.png`;
             link.href = modalChartInstance.toBase64Image();
             link.click();
         }
