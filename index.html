@@ -21,8 +21,8 @@
         <div class="max-w-7xl mx-auto px-4 py-4 flex flex-wrap justify-between items-center gap-4">
             <h1 class="text-xl font-bold tracking-wide" id="ui-title">📊 3-Factory Advanced Issue Dashboard / 三厂设备故障分析系统</h1>
             <div class="flex items-center gap-3">
-                <!-- ปุ่มสำหรับกดเปิด Google Sheets ไปป้อนข้อมูล (เอาลิงก์ชีตมาวางแทนข้อความในเครื่องหมายคำพูดด้านล่างนี้ได้เลยครับ) -->
-                <a id="btn-add-data" href="https://docs.google.com/spreadsheets/d/https://docs.google.com/spreadsheets/d/1WzJHUFbjMDLKLfQ_uhiPR2o03y_cvBrWBEGtgKe2cTM/edit?pli=1&gid=1012980436#gid=1012980436/edit" target="_blank" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-1.5 rounded-lg text-sm font-medium transition shadow-sm flex items-center gap-1.5">
+                <!-- ✅ แก้ไขลิงก์ Google Sheets ให้ถูกต้องแล้วครับ -->
+                <a id="btn-add-data" href="https://docs.google.com/spreadsheets/d/1WzJHUFbjMDLKLfQ_uhiPR2o03y_cvBrWBEGtgKe2cTM/edit?gid=1012980436#gid=1012980436" target="_blank" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-1.5 rounded-lg text-sm font-medium transition shadow-sm flex items-center gap-1.5">
                     ➕ <span id="btn-add-data-text">Add Data / 添加数据</span>
                 </a>
                 <button onclick="toggleLang()" class="bg-blue-600 hover:bg-blue-500 px-4 py-1.5 rounded-lg text-sm font-medium transition shadow-sm">
@@ -137,7 +137,6 @@
     </main>
 
     <script>
-        // ⚠️ 1. แทนที่ URL นี้ด้วย Web App URL ของ Google Apps Script ของคุณ
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyJqyrQMWebqeIyd6OTN-F3GYhsCv1a7QhuYDdp9PIGyItv7vRHvypjBlXen5GH9FnN/exec";
 
         let currentLang = 'EN';
@@ -291,7 +290,6 @@
         }
 
         function renderDashboard(data) {
-            // 1. Summary Cards
             const factoryGroups = {};
             data.forEach(item => {
                 const f = item.Factory || 'Other';
@@ -315,13 +313,9 @@
                 `;
             });
 
-            // 2. Horizontal Breakdown Chart
             renderDetailChart(data);
-
-            // 3. Top 3 Issues Table
             renderTop3Table(data);
 
-            // 4. Full Data Table
             const tbody = document.getElementById('dataTableBody');
             tbody.innerHTML = '';
             document.getElementById('table-count').innerText = `Total: ${data.length}`;
