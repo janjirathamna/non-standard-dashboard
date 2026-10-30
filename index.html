@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3-Factory Issue Dashboard</title>
+    <title>3-Factory Advanced Issue Dashboard</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js -->
@@ -18,9 +18,13 @@
 
     <!-- Navbar -->
     <header class="bg-slate-900 text-white shadow-lg sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-            <h1 class="text-xl font-bold tracking-wide" id="ui-title">📊 3-Factory Issue Dashboard / 三厂设备故障分析系统</h1>
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-wrap justify-between items-center gap-4">
+            <h1 class="text-xl font-bold tracking-wide" id="ui-title">📊 3-Factory Advanced Issue Dashboard / 三厂设备故障分析系统</h1>
             <div class="flex items-center gap-3">
+                <!-- ปุ่มสำหรับกดเปิด Google Sheets ไปป้อนข้อมูล -->
+                <a id="btn-add-data" href="วาง_URL_ของ_Google_Sheet_ที่นี่" target="_blank" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-1.5 rounded-lg text-sm font-medium transition shadow-sm flex items-center gap-1.5">
+                    ➕ <span id="btn-add-data-text">Add Data / 添加数据</span>
+                </a>
                 <button onclick="toggleLang()" class="bg-blue-600 hover:bg-blue-500 px-4 py-1.5 rounded-lg text-sm font-medium transition shadow-sm">
                     🌐 <span id="lang-btn-text">中文 / EN</span>
                 </button>
@@ -31,24 +35,37 @@
     <!-- Main Container -->
     <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
 
-        <!-- Controls Bar -->
+        <!-- Controls Bar (Filters & Date Range) -->
         <div class="bg-white p-4 rounded-xl shadow-sm flex flex-wrap justify-between items-center gap-4">
             <div class="flex flex-wrap items-center gap-4">
                 <div>
                     <label class="text-xs font-semibold text-gray-500 block mb-1" id="label-select-factory">Factory / 工厂:</label>
-                    <select id="factoryFilter" onchange="filterData()" class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <select id="factoryFilter" onchange="filterAndRender()" class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                         <option value="ALL">-- All Factories / 所有工厂 --</option>
                     </select>
                 </div>
                 <div>
                     <label class="text-xs font-semibold text-gray-500 block mb-1" id="label-select-machine">Machine / 机器:</label>
-                    <select id="machineFilter" onchange="filterData()" class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <select id="machineFilter" onchange="filterAndRender()" class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                         <option value="ALL">-- All Machines / 所有机器 --</option>
                     </select>
                 </div>
+                <div>
+                    <label class="text-xs font-semibold text-gray-500 block mb-1" id="label-start-date">Start Date / 开始日期:</label>
+                    <input type="date" id="startDate" onchange="filterAndRender()" class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="text-xs font-semibold text-gray-500 block mb-1" id="label-end-date">End Date / 结束日期:</label>
+                    <input type="date" id="endDate" onchange="filterAndRender()" class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div class="flex items-end">
+                    <button onclick="resetFilters()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1.5 rounded-lg text-sm transition" id="btn-reset">
+                        Reset / 重置
+                    </button>
+                </div>
             </div>
             <div>
-                <button onclick="window.print()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm flex items-center gap-2" id="btn-export">
+                <button onclick="window.print()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm flex items-center gap-2" id="btn-export">
                     📥 Export PDF / 导出报告
                 </button>
             </div>
@@ -56,35 +73,47 @@
 
         <!-- 3 Factory Overview Cards -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="factory-summary-cards">
-            <!-- Cards will be dynamically injected here -->
+            <!-- Cards injected via JS -->
         </div>
 
-        <!-- 3 Charts Section (1 Chart per Factory) -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
-                <h3 class="font-semibold text-gray-700 mb-3 text-center border-b pb-2" id="chart-f1-title">Factory 1 / 厂区 1</h3>
-                <div class="relative h-60">
-                    <canvas id="chartFactory1"></canvas>
-                </div>
-            </div>
-            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
-                <h3 class="font-semibold text-gray-700 mb-3 text-center border-b pb-2" id="chart-f2-title">Factory 2 / 厂区 2</h3>
-                <div class="relative h-60">
-                    <canvas id="chartFactory2"></canvas>
-                </div>
-            </div>
-            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
-                <h3 class="font-semibold text-gray-700 mb-3 text-center border-b pb-2" id="chart-f3-title">Factory 3 / 厂区 3</h3>
-                <div class="relative h-60">
-                    <canvas id="chartFactory3"></canvas>
-                </div>
+        <!-- Detailed Breakdown Chart per Machine (Horizontal Bar) -->
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+            <h3 class="font-semibold text-gray-700 mb-4 border-b pb-2 flex justify-between items-center">
+                <span id="chart-detail-title">Machine Issue Breakdown / 各机器故障频次详情</span>
+            </h3>
+            <div class="relative w-full" id="chartContainerWrapper" style="height: 450px;">
+                <canvas id="machineDetailChart"></canvas>
             </div>
         </div>
 
-        <!-- Detail Data Table -->
+        <!-- Top 3 Issues Summary Table (Per Factory / Machine) -->
         <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
             <div class="px-5 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
-                <h3 class="font-semibold text-gray-700" id="table-title">Issue Log & Resolutions / 故障记录与解决方法</h3>
+                <h3 class="font-semibold text-gray-700" id="top3-title">Top 3 Most Frequent Issues / Top 3 高频故障汇总</h3>
+                <span class="text-xs text-gray-500" id="top3-count">Categories: 0</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead>
+                        <tr class="bg-gray-100 text-gray-600 border-b text-xs uppercase">
+                            <th class="p-3" id="th-top-factory">Factory / 工厂</th>
+                            <th class="p-3" id="th-top-machine">Machine / 机器</th>
+                            <th class="p-3" id="th-top-rank">Rank / 排名</th>
+                            <th class="p-3" id="th-top-issue">Issue / 故障现象</th>
+                            <th class="p-3" id="th-top-freq">Frequency / เกิดซ้ำ (ครั้ง)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="top3TableBody" class="divide-y divide-gray-100">
+                        <!-- JS injected data -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Full Detail Log Table -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
+            <div class="px-5 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+                <h3 class="font-semibold text-gray-700" id="table-title">Full Issue Log & Resolutions / 完整故障记录</h3>
                 <span class="text-xs text-gray-500" id="table-count">Total: 0</span>
             </div>
             <div class="overflow-x-auto">
@@ -108,22 +137,33 @@
     </main>
 
     <script>
-        // ⚠️ นำ Web App URL ที่ได้จาก Google Apps Script มาวางตรงนี้
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyJqyrQMWebqeIyd6OTN-F3GYhsCv1a7QhuYDdp9PIGyItv7vRHvypjBlXen5GH9FnN/exec";
+        // ⚠️ 1. แทนที่ URL นี้ด้วย Web App URL ของ Google Apps Script ของคุณ
+        const WEB_APP_URL = "วาง_URL_ของ_Google_Apps_Script_ที่นี่";
 
         let currentLang = 'EN';
         let rawData = [];
-        let chartInstances = {};
+        let detailChartInstance = null;
 
         const uiText = {
             EN: {
-                title: "📊 3-Factory Issue Dashboard",
+                title: "📊 3-Factory Advanced Issue Dashboard",
+                addDataBtn: "➕ Add Data",
                 selectFactory: "Factory:",
                 selectMachine: "Machine:",
+                startDate: "Start Date:",
+                endDate: "End Date:",
+                reset: "Reset",
                 exportBtn: "📥 Export PDF / Print",
                 allFact: "-- All Factories --",
                 allMach: "-- All Machines --",
-                tableTitle: "Issue Log & Resolutions",
+                chartTitle: "Machine Issue Breakdown & Frequencies",
+                top3Title: "Top 3 Most Frequent Issues",
+                thTopFact: "Factory",
+                thTopMach: "Machine",
+                thTopRank: "Rank",
+                thTopIssue: "Issue",
+                thTopFreq: "Frequency (Times)",
+                tableTitle: "Full Issue Log & Resolutions",
                 thFactory: "Factory",
                 thTime: "Time",
                 thMachine: "Machine",
@@ -131,13 +171,24 @@
                 thSolution: "Solution"
             },
             CN: {
-                title: "📊 三厂设备故障分析系统",
+                title: "📊 三厂高级设备故障分析系统",
+                addDataBtn: "➕ 添加数据",
                 selectFactory: "工厂:",
                 selectMachine: "机器:",
+                startDate: "开始日期:",
+                endDate: "结束日期:",
+                reset: "重置",
                 exportBtn: "📥 导出 PDF / 打印",
                 allFact: "-- 所有工厂 --",
                 allMach: "-- 所有机器 --",
-                tableTitle: "故障记录与解决方法",
+                chartTitle: "各机器故障现象及发生频次明细",
+                top3Title: "Top 3 高频故障汇总",
+                thTopFact: "工厂",
+                thTopMach: "机器名称",
+                thTopRank: "排名",
+                thTopIssue: "故障现象",
+                thTopFreq: "发生次数 (次)",
+                tableTitle: "完整故障记录与解决方法",
                 thFactory: "工厂",
                 thTime: "时间",
                 thMachine: "机器名称",
@@ -155,9 +206,20 @@
         function updateUIStrings() {
             const t = uiText[currentLang];
             document.getElementById('ui-title').innerText = t.title;
+            document.getElementById('btn-add-data-text').innerText = t.addDataBtn;
             document.getElementById('label-select-factory').innerText = t.selectFactory;
             document.getElementById('label-select-machine').innerText = t.selectMachine;
+            document.getElementById('label-start-date').innerText = t.startDate;
+            document.getElementById('label-end-date').innerText = t.endDate;
+            document.getElementById('btn-reset').innerText = t.reset;
             document.getElementById('btn-export').innerText = t.exportBtn;
+            document.getElementById('chart-detail-title').innerText = t.chartTitle;
+            document.getElementById('top3-title').innerText = t.top3Title;
+            document.getElementById('th-top-factory').innerText = t.thTopFact;
+            document.getElementById('th-top-machine').innerText = t.thTopMach;
+            document.getElementById('th-top-rank').innerText = t.thTopRank;
+            document.getElementById('th-top-issue').innerText = t.thTopIssue;
+            document.getElementById('th-top-freq').innerText = t.thTopFreq;
             document.getElementById('table-title').innerText = t.tableTitle;
             document.getElementById('th-factory').innerText = t.thFactory;
             document.getElementById('th-time').innerText = t.thTime;
@@ -191,24 +253,45 @@
             machines.forEach(m => machSelect.innerHTML += `<option value="${m}">${m}</option>`);
         }
 
+        function resetFilters() {
+            document.getElementById('factoryFilter').value = 'ALL';
+            document.getElementById('machineFilter').value = 'ALL';
+            document.getElementById('startDate').value = '';
+            document.getElementById('endDate').value = '';
+            renderDashboard(rawData);
+        }
+
         function filterCurrentData() {
             const selectedFact = document.getElementById('factoryFilter').value;
             const selectedMach = document.getElementById('machineFilter').value;
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
 
             return rawData.filter(d => {
                 const matchFact = (selectedFact === 'ALL') || (d.Factory === selectedFact);
                 const machName = currentLang === 'EN' ? d.MappedMachineName_EN : d.MappedMachineName_CN;
                 const matchMach = (selectedMach === 'ALL') || (machName === selectedMach);
-                return matchFact && matchMach;
+
+                let matchDate = true;
+                if (d.Timestamp) {
+                    const rowDate = d.Timestamp.split(' ')[0];
+                    if (startDate && rowDate < startDate) matchDate = false;
+                    if (endDate && rowDate > endDate) matchDate = false;
+                } else if (startDate || endDate) {
+                    matchDate = false;
+                }
+
+                return matchFact && matchMach && matchDate;
             });
         }
 
-        function filterData() {
+        function filterAndRender() {
             const filtered = filterCurrentData();
             renderDashboard(filtered);
         }
 
         function renderDashboard(data) {
+            // 1. Summary Cards
             const factoryGroups = {};
             data.forEach(item => {
                 const f = item.Factory || 'Other';
@@ -216,16 +299,13 @@
                 factoryGroups[f].push(item);
             });
 
-            const factoryList = Object.keys(factoryGroups);
-
-            // Render Cards Summary
             const cardsContainer = document.getElementById('factory-summary-cards');
             cardsContainer.innerHTML = '';
-            
-            factoryList.slice(0, 3).forEach((fact, idx) => {
+            Object.keys(factoryGroups).forEach((fact, idx) => {
                 const count = factoryGroups[fact].length;
+                const colors = ['border-blue-500', 'border-amber-500', 'border-purple-500', 'border-emerald-500'];
                 cardsContainer.innerHTML += `
-                    <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 ${idx===0?'border-blue-500':idx===1?'border-amber-500':'border-purple-500'}">
+                    <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 ${colors[idx % colors.length]}">
                         <p class="text-xs font-semibold text-gray-400 uppercase">${fact}</p>
                         <div class="flex justify-between items-baseline mt-2">
                             <h3 class="text-2xl font-bold text-gray-800">${count}</h3>
@@ -235,20 +315,13 @@
                 `;
             });
 
-            // Render 3 Charts (Top Machine Issues per Factory)
-            for (let i = 1; i <= 3; i++) {
-                const factName = factoryList[i - 1];
-                const chartId = `chartFactory${i}`;
-                document.getElementById(`chart-f${i}-title`).innerText = factName ? `${factName}` : `Factory ${i}`;
+            // 2. Horizontal Breakdown Chart
+            renderDetailChart(data);
 
-                if (factName && factoryGroups[factName]) {
-                    renderSingleChart(chartId, factoryGroups[factName]);
-                } else {
-                    renderSingleChart(chartId, []);
-                }
-            }
+            // 3. Top 3 Issues Table
+            renderTop3Table(data);
 
-            // Render Table
+            // 4. Full Data Table
             const tbody = document.getElementById('dataTableBody');
             tbody.innerHTML = '';
             document.getElementById('table-count').innerText = `Total: ${data.length}`;
@@ -270,40 +343,99 @@
             });
         }
 
-        function renderSingleChart(canvasId, factData) {
-            const ctx = document.getElementById(canvasId).getContext('2d');
-            
-            if (chartInstances[canvasId]) {
-                chartInstances[canvasId].destroy();
-            }
+        function renderDetailChart(data) {
+            const ctx = document.getElementById('machineDetailChart').getContext('2d');
+            if (detailChartInstance) detailChartInstance.destroy();
 
-            const counts = {};
-            factData.forEach(d => {
-                const m = currentLang === 'EN' ? (d.MappedMachineName_EN || 'Unknown') : (d.MappedMachineName_CN || '未知机器');
-                counts[m] = (counts[m] || 0) + 1;
+            const mapCounts = {};
+            data.forEach(d => {
+                const mach = currentLang === 'EN' ? (d.MappedMachineName_EN || 'Unknown') : (d.MappedMachineName_CN || '未知机器');
+                const issue = currentLang === 'EN' ? (d.EnglishIssue || 'Unknown') : (d.ChineseIssue || '未知故障');
+                const key = `${mach} | ${issue}`;
+                mapCounts[key] = (mapCounts[key] || 0) + 1;
             });
 
-            chartInstances[canvasId] = new Chart(ctx, {
+            const labels = Object.keys(mapCounts);
+            const values = Object.values(mapCounts);
+
+            const dynamicHeight = Math.max(400, labels.length * 25);
+            document.getElementById('chartContainerWrapper').style.height = dynamicHeight + 'px';
+
+            detailChartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: Object.keys(counts),
+                    labels: labels,
                     datasets: [{
-                        label: currentLang === 'EN' ? 'Issues' : '故障次数',
-                        data: Object.values(counts),
-                        backgroundColor: '#3b82f6',
+                        label: currentLang === 'EN' ? 'Frequency (Times)' : '发生次数 (次)',
+                        data: values,
+                        backgroundColor: '#0d9488',
                         borderRadius: 4
                     }]
                 },
                 options: {
+                    indexAxis: 'y',
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
                     scales: {
-                        y: { beginAtZero: true, ticks: { stepSize: 1 } },
-                        x: { ticks: { font: { size: 10 } } }
+                        x: { beginAtZero: true, ticks: { stepSize: 1 } },
+                        y: { ticks: { font: { size: 11 } } }
                     }
                 }
             });
+        }
+
+        function renderTop3Table(data) {
+            const groupData = {};
+            data.forEach(d => {
+                const fact = d.Factory || 'Other';
+                const mach = currentLang === 'EN' ? (d.MappedMachineName_EN || 'Unknown') : (d.MappedMachineName_CN || '未知机器');
+                const issue = currentLang === 'EN' ? (d.EnglishIssue || 'Unknown') : (d.ChineseIssue || '未知故障');
+
+                if (!groupData[fact]) groupData[fact] = {};
+                if (!groupData[fact][mach]) groupData[fact][mach] = {};
+                groupData[fact][mach][issue] = (groupData[fact][mach][issue] || 0) + 1;
+            });
+
+            const top3Tbody = document.getElementById('top3TableBody');
+            top3Tbody.innerHTML = '';
+            let rowCounter = 0;
+
+            Object.keys(groupData).forEach(fact => {
+                Object.keys(groupData[fact]).forEach(mach => {
+                    const issuesObj = groupData[fact][mach];
+                    let sortedIssues = Object.entries(issuesObj).map(([issue, count]) => ({ issue, count }));
+                    sortedIssues.sort((a, b) => b.count - a.count);
+
+                    let uniqueCounts = [...new Set(sortedIssues.map(i => i.count))].sort((a, b) => b - a);
+                    let topCountsAllowed = uniqueCounts.slice(0, 3);
+
+                    let filteredTop3 = sortedIssues.filter(i => topCountsAllowed.includes(i.count));
+
+                    let currentRank = 0;
+                    let lastCount = -1;
+
+                    filteredTop3.forEach((item, index) => {
+                        if (item.count !== lastCount) {
+                            currentRank++;
+                            lastCount = item.count;
+                        }
+
+                        rowCounter++;
+                        top3Tbody.innerHTML += `
+                            <tr class="hover:bg-gray-50 transition">
+                                <td class="p-3"><span class="bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded font-medium">${fact}</span></td>
+                                <td class="p-3 font-semibold text-gray-800">${mach}</td>
+                                <td class="p-3"><span class="bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded-full font-bold">Rank ${currentRank}</span></td>
+                                <td class="p-3 text-red-600 font-medium">${item.issue}</td>
+                                <td class="p-3 font-bold text-gray-700">${item.count}</td>
+                            </tr>
+                        `;
+                    });
+                });
+            });
+
+            document.getElementById('top3-count').innerText = `Top Items: ${rowCounter}`;
         }
 
         fetchData();
