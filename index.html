@@ -1,420 +1,312 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3-Factory Advanced Issue Dashboard</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Google Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Prompt', sans-serif; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>3-Factory Issue Dashboard</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0e1318;--panel:#161d24;--panel2:#1c252e;--line:#26313b;--text:#e6edf3;--muted:#8b98a5;--accent:#2dd4bf;--accent-ink:#04201c}
+  [data-theme=light]{--bg:#eef1f3;--panel:#fff;--panel2:#f3f5f7;--line:#d9dfe4;--text:#18222b;--muted:#617080;--accent:#0f766e;--accent-ink:#fff}
+  body{font-family:'IBM Plex Sans','Noto Sans SC',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:13px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:8px}
+  .btn{display:inline-flex;align-items:center;gap:4px;font-size:12px;line-height:1;padding:6px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);color:var(--text);white-space:nowrap}
+  .btn:hover{border-color:var(--accent)}
+  .btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+  .tab{font-size:12px;padding:6px 12px;border-radius:6px;color:var(--muted);border:1px solid transparent}
+  .tab.on{background:var(--panel2);color:var(--text);border-color:var(--line);font-weight:600}
+  select,input[type=date]{font-size:12px;padding:5px 7px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);color:var(--text);min-width:0;color-scheme:dark}
+  [data-theme=light] select,[data-theme=light] input[type=date]{color-scheme:light}
+  .btn:focus-visible,select:focus-visible,input:focus-visible,.tab:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+  table{border-collapse:collapse}
+  th{font-weight:600;text-align:left;background:var(--panel2);color:var(--muted);position:sticky;top:0;font-size:12px}
+  td,th{padding:6px 10px}
+  tbody tr{border-top:1px solid var(--line)}
+  tbody tr:hover{background:var(--panel2)}
+  .scroll{max-height:70vh;overflow:auto}
+  .lbl{font-size:11px;color:var(--muted)}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+  @media print{
+    :root,[data-theme]{--bg:#fff;--panel:#fff;--panel2:#f3f5f7;--line:#bbb;--text:#000;--muted:#444}
+    .no-print{display:none!important}.view{display:block!important}.scroll{max-height:none;overflow:visible}
+    .panel,tr{break-inside:avoid}
+  }
+</style>
 </head>
-<body class="bg-gray-100 text-gray-800 min-h-screen">
+<body>
 
-    <!-- Navbar -->
-    <header class="bg-slate-900 text-white shadow-lg sticky top-0 z-50">
-        <div class="max-w-[1600px] mx-auto px-6 py-5 flex flex-wrap justify-between items-center gap-4">
-            <h1 class="text-2xl font-bold tracking-wide" id="ui-title">📊 3-Factory Advanced Issue Dashboard / 三厂设备故障分析系统</h1>
-            <div class="flex items-center gap-4">
-                <a id="btn-add-data" href="https://docs.google.com/spreadsheets/d/1WzJHUFbjMDLKLfQ_uhiPR2o03y_cvBrWBEGtgKe2cTM/edit?gid=1012980436#gid=1012980436" target="_blank" class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-base font-medium transition shadow-md flex items-center gap-2">
-                    ➕ <span id="btn-add-data-text">Add Data / 添加数据</span>
-                </a>
-                <button onclick="toggleLang()" class="bg-blue-600 hover:bg-blue-500 px-5 py-2.5 rounded-xl text-base font-medium transition shadow-md">
-                    🌐 <span id="lang-btn-text">中文 / EN</span>
-                </button>
-            </div>
-        </div>
-    </header>
-
-    <!-- Main Container -->
-    <main class="max-w-[1600px] mx-auto px-6 py-8 space-y-8">
-
-        <!-- Global Controls Bar -->
-        <div class="bg-white p-6 rounded-2xl shadow-sm flex flex-wrap justify-between items-center gap-6">
-            <div class="flex flex-wrap items-center gap-6">
-                <div>
-                    <label class="text-sm font-semibold text-gray-500 block mb-1.5" id="label-start-date">Start Date / 开始日期:</label>
-                    <input type="date" id="startDate" onchange="filterAndRender()" class="border border-gray-300 rounded-xl px-4 py-2 text-base focus:ring-2 focus:ring-blue-500 outline-none">
-                </div>
-                <div>
-                    <label class="text-sm font-semibold text-gray-500 block mb-1.5" id="label-end-date">End Date / 结束日期:</label>
-                    <input type="date" id="endDate" onchange="filterAndRender()" class="border border-gray-300 rounded-xl px-4 py-2 text-base focus:ring-2 focus:ring-blue-500 outline-none">
-                </div>
-                <div class="flex items-end">
-                    <button onclick="resetFilters()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-5 py-2 rounded-xl text-base transition font-medium" id="btn-reset">
-                        Reset / 重置
-                    </button>
-                </div>
-            </div>
-            <div>
-                <button onclick="window.print()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2.5 rounded-xl text-base font-medium transition shadow-md flex items-center gap-2" id="btn-export">
-                    📥 Print Report / 打印报告
-                </button>
-            </div>
-        </div>
-
-        <!-- 3-Column Overview Layout -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8" id="three-factory-container">
-            <!-- Injected dynamically -->
-        </div>
-
-    </main>
-
-    <!-- Detail Modal -->
-    <div id="detailModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-6 overflow-y-auto">
-        <div class="bg-white w-full max-w-7xl rounded-3xl shadow-2xl overflow-hidden my-auto flex flex-col max-h-[92vh]">
-            <div class="bg-slate-900 text-white px-8 py-5 flex justify-between items-center">
-                <h3 id="modalTitle" class="text-2xl font-bold">Factory Details</h3>
-                <button onclick="closeModal()" class="text-gray-400 hover:text-white text-3xl font-bold">&times;</button>
-            </div>
-            <div class="p-8 overflow-y-auto space-y-8 flex-1">
-                <!-- Chart Section (คงความสูงเดิมตามที่คุณต้องการ) -->
-                <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
-                    <div class="flex justify-between items-center mb-4">
-                        <h4 class="font-bold text-lg text-gray-700" id="modalChartTitle">Machine Issue Frequency Breakdown (Ascending / น้อยไปมาก)</h4>
-                        <button onclick="exportChartImage()" class="bg-teal-600 hover:bg-teal-500 text-white px-4 py-2 rounded-xl text-sm font-medium transition shadow-sm flex items-center gap-2">
-                            📊 Export Chart PNG
-                        </button>
-                    </div>
-                    <div class="relative w-full" id="modalChartWrapper" style="height: 450px;">
-                        <canvas id="modalDetailChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- Table Section (ปรับให้แสดงผลได้หลายบรรทัด ยาวขึ้น ไม่จำกัดพื้นที่สั้นๆ) -->
-                <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-                    <div class="px-6 py-4 bg-gray-100 border-b font-bold text-gray-700 text-base" id="modalTableTitle">
-                        Full Issue Log & Frequency Breakdown (Grouped by Machine)
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse text-base">
-                            <thead>
-                                <tr class="bg-gray-200 text-gray-700 border-b text-sm uppercase">
-                                    <th class="p-4 border-r border-gray-300 w-1/4" id="th-modal-mach">Machine / 机器</th>
-                                    <th class="p-4 border-r border-gray-300 w-1/2" id="th-modal-issue">Issue / 故障现象</th>
-                                    <th class="p-4 text-center w-1/4" id="th-modal-count">Repeat Count / 发生次数 (น้อย ➔ มาก)</th>
-                                </tr>
-                            </thead>
-                            <tbody id="modalTableBody" class="divide-y divide-gray-200">
-                                <!-- Injected via JS -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
+<header class="no-print sticky top-0 z-20" style="background:var(--panel);border-bottom:1px solid var(--line)">
+  <div class="max-w-7xl mx-auto px-3 py-2 flex flex-wrap items-center justify-between gap-2">
+    <div class="min-w-0">
+      <h1 class="font-bold text-sm sm:text-base tracking-wide truncate" data-i18n="title"></h1>
+      <div class="lbl" id="updated"></div>
     </div>
+    <div class="flex flex-wrap items-center gap-1.5">
+      <a class="btn primary" target="_blank" rel="noopener" data-i18n="addData"
+         href="https://docs.google.com/spreadsheets/d/1WzJHUFbjMDLKLfQ_uhiPR2o03y_cvBrWBEGtgKe2cTM/edit?gid=1012980436#gid=1012980436"></a>
+      <button id="btn-en" class="btn">EN</button>
+      <button id="btn-zh" class="btn">中文</button>
+      <button id="btnTheme" class="btn" title="Theme">◐</button>
+      <button id="btnPng" class="btn" title="PNG">▧ PNG</button>
+      <button id="btnCsv" class="btn" title="CSV">⇩ CSV</button>
+      <button id="btnPrint" class="btn" title="PDF">⎙ PDF</button>
+    </div>
+  </div>
+  <div class="max-w-7xl mx-auto px-3 pb-2 flex flex-wrap items-center gap-1">
+    <nav class="flex gap-1 mr-auto">
+      <button class="tab on" data-tab="overview" data-i18n="tabOverview"></button>
+      <button class="tab" data-tab="top" data-i18n="tabTop"></button>
+      <button class="tab" data-tab="log" data-i18n="tabLog"></button>
+    </nav>
+    <select id="fFactory" aria-label="Factory"></select>
+    <select id="fMachine" aria-label="Machine" class="max-w-[190px]"></select>
+    <input type="date" id="fStart" aria-label="Start">
+    <span class="lbl">–</span>
+    <input type="date" id="fEnd" aria-label="End">
+    <button id="btnReset" class="btn" data-i18n="reset"></button>
+  </div>
+</header>
 
-    <script>
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxNht563H7COeUnwfF4NUImMsv3bFGoIpiHsE4h1tTrPFemxnskTOBsCw02zQ-ts7G8/exec";
+<main class="max-w-7xl mx-auto px-3 py-3 space-y-3">
 
-        let currentLang = 'EN';
-        let rawData = [];
-        let modalChartInstance = null;
-        let activeFactoryModal = null;
+  <section class="view" data-view="overview">
+    <div id="cards" class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3"></div>
+    <div class="panel p-3">
+      <div class="font-semibold mb-2" data-i18n="chartTitle"></div>
+      <div id="chartWrap" class="relative w-full"><canvas id="detailChart"></canvas></div>
+    </div>
+  </section>
 
-        const uiText = {
-            EN: {
-                title: "📊 3-Factory Advanced Issue Dashboard",
-                addDataBtn: "➕ Add Data",
-                startDate: "Start Date:",
-                endDate: "End Date:",
-                reset: "Reset",
-                exportBtn: "📥 Print Report",
-                top3Title: "Top Issues (Ascending / น้อยไปมาก)",
-                detailsBtn: "Details / 详情 ➔",
-                totalIssues: "Total Issues",
-                modalChartTitle: "Machine Issue Frequency Breakdown (Ascending / น้อยไปมาก)",
-                modalTableTitle: "Full Issue Log & Frequency Breakdown (Grouped by Machine)",
-            },
-            CN: {
-                title: "📊 三厂高级设备故障分析系统",
-                addDataBtn: "➕ 添加数据",
-                startDate: "开始日期:",
-                endDate: "结束日期:",
-                reset: "重置",
-                exportBtn: "📥 打印报告",
-                top3Title: "故障汇总 (从小到大)",
-                detailsBtn: "详情 ➔",
-                totalIssues: "总故障数",
-                modalChartTitle: "各机器故障现象及发生频次明细 (从小到大)",
-                modalTableTitle: "完整故障记录与发生次数明细 (合并机器)",
-            }
-        };
+  <section class="view panel p-3 hidden" data-view="top">
+    <div class="font-semibold" data-i18n="topTitle"></div>
+    <p class="lbl mb-2" data-i18n="topNote"></p>
+    <div class="scroll">
+      <table class="w-full" id="tblTop">
+        <thead><tr><th data-i18n="factory"></th><th data-i18n="machine"></th><th>#</th><th data-i18n="issue"></th><th class="text-right" data-i18n="times"></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
 
-        function toggleLang() {
-            currentLang = currentLang === 'EN' ? 'CN' : 'EN';
-            updateUIStrings();
-            renderDashboard(filterCurrentData());
-        }
+  <section class="view panel p-3 hidden" data-view="log">
+    <div class="flex items-center justify-between mb-2">
+      <div class="font-semibold" data-i18n="logTitle"></div><span id="logCount" class="lbl"></span>
+    </div>
+    <div class="scroll">
+      <table class="w-full" id="tblLog">
+        <thead><tr><th data-i18n="time"></th><th data-i18n="factory"></th><th data-i18n="machine"></th><th data-i18n="issue"></th><th data-i18n="solution"></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
 
-        function updateUIStrings() {
-            const t = uiText[currentLang];
-            document.getElementById('ui-title').innerText = t.title;
-            document.getElementById('btn-add-data-text').innerText = t.addDataBtn;
-            document.getElementById('label-start-date').innerText = t.startDate;
-            document.getElementById('label-end-date').innerText = t.endDate;
-            document.getElementById('btn-reset').innerText = t.reset;
-            document.getElementById('btn-export').innerText = t.exportBtn;
-        }
+  <div id="status" class="text-center lbl no-print"></div>
+</main>
 
-        async function fetchData() {
-            try {
-                let response = await fetch(WEB_APP_URL);
-                rawData = await response.json();
-                renderDashboard(rawData);
-            } catch (error) {
-                console.error("Error fetching data:", error);
-            }
-        }
+<script>
+/* ================== CONFIG ================== */
+// Paste your deployed Web App URL (…/exec). Leave empty to preview with demo data.
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxNht563H7COeUnwfF4NUImMsv3bFGoIpiHsE4h1tTrPFemxnskTOBsCw02zQ-ts7G8/exec';
+const FACTORIES = ['Ayutthaya', 'Terahop 5000', 'Pinewave'];
+const FCOLOR = { 'Ayutthaya': '#2dd4bf', 'Terahop 5000': '#f59e0b', 'Pinewave': '#a78bfa' };
 
-        function resetFilters() {
-            document.getElementById('startDate').value = '';
-            document.getElementById('endDate').value = '';
-            renderDashboard(rawData);
-        }
+/* ================== i18n ================== */
+const I18N = {
+  en: { title:'3-FACTORY ISSUE DASHBOARD', addData:'＋ Add Data', factory:'Factory', machine:'Machine', reset:'Reset',
+    all:'All factories', allM:'All machines', cases:'cases', chartTitle:'Issues per machine',
+    tabOverview:'Overview', tabTop:'Top 3 Issues', tabLog:'Issue Log',
+    topTitle:'Top 3 issues per machine', topNote:'Tied issues are all shown, so a rank can contain more than one issue.',
+    issue:'Issue', times:'Times', logTitle:'Full issue log', time:'Time', solution:'Solution',
+    loading:'Loading data…', demo:'Demo data shown. Set GAS_URL in index.html to load your sheets.',
+    error:'Could not load data: ', empty:'No records match the current filters.', updated:'Updated', total:'Total' },
+  zh: { title:'三工厂问题看板', addData:'＋ 添加数据', factory:'工厂', machine:'机器', reset:'重置',
+    all:'全部工厂', allM:'全部机器', cases:'起', chartTitle:'各机器问题统计',
+    tabOverview:'概览', tabTop:'前3大问题', tabLog:'问题记录',
+    topTitle:'各机器前3大问题', topNote:'并列的问题会全部显示，因此同一名次可能有多条。',
+    issue:'问题', times:'次数', logTitle:'完整问题记录', time:'时间', solution:'解决方法',
+    loading:'数据加载中…', demo:'当前为演示数据。请在 index.html 中设置 GAS_URL 以加载表格数据。',
+    error:'数据加载失败：', empty:'没有符合当前筛选条件的记录。', updated:'更新时间', total:'总计' }
+};
+let lang = localStorage.getItem('lang') || 'en';
+let theme = localStorage.getItem('theme') || 'dark';
+const t = k => I18N[lang][k] || k;
 
-        function filterCurrentData() {
-	        const startDate = document.getElementById('startDate').value;
-            const endDate = document.getElementById('endDate').value;
+/* ================== STATE ================== */
+let DATA = [], chart = null, detailChartInstance = null, generatedAt = null, tab = 'overview';
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const mName = r => (lang === 'zh' && r.machineCn) ? r.machineCn : r.machineEn;
+const pick = (en, cn) => (lang === 'zh' && cn) ? cn : en;
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 
-            return rawData.filter(d => {
-                let matchDate = true;
-                if (d.Timestamp) {
-                    const rowDate = d.Timestamp.split(' ')[0];
-                    if (startDate && rowDate < startDate) matchDate = false;
-                    if (endDate && rowDate > endDate) matchDate = false;
-                } else if (startDate || endDate) {
-                    matchDate = false;
-                }
-                return matchDate;
-            });
-        }
+/* ================== LOAD ================== */
+async function load() {
+  $('status').textContent = t('loading');
+  try {
+    if (!GAS_URL) { DATA = demoData(); generatedAt = new Date().toISOString(); $('status').textContent = t('demo'); }
+    else {
+      const json = await (await fetch(GAS_URL)).json();
+      if (!json.ok) throw new Error(json.error);
+      DATA = json.data; generatedAt = json.generatedAt; $('status').textContent = '';
+    }
+  } catch (e) { DATA = []; $('status').textContent = t('error') + e.message; }
+  buildFilters(); render();
+}
 
-        function filterAndRender() {
-            renderDashboard(filterCurrentData());
-        }
+/* ================== FILTERS ================== */
+function buildFilters() {
+  const fSel = $('fFactory'), cur = fSel.value;
+  fSel.innerHTML = `<option value="">${t('all')}</option>` + FACTORIES.map(f => `<option>${esc(f)}</option>`).join('');
+  fSel.value = cur; buildMachineOptions();
+}
+function buildMachineOptions() {
+  const f = $('fFactory').value, cur = $('fMachine').value, seen = new Map();
+  DATA.filter(r => !f || r.factory === f).forEach(r => seen.set(r.machineKey, mName(r)));
+  const opts = [...seen.entries()].sort((a, b) => a[1].localeCompare(b[1]));
+  $('fMachine').innerHTML = `<option value="">${t('allM')}</option>` + opts.map(([k, n]) => `<option value="${esc(k)}">${esc(n)}</option>`).join('');
+  $('fMachine').value = seen.has(cur) ? cur : '';
+}
+function filtered() {
+  const f = $('fFactory').value, m = $('fMachine').value, s = $('fStart').value, e = $('fEnd').value;
+  return DATA.filter(r => {
+    const d = (r.timestamp || '').slice(0, 10);
+    return (!f || r.factory === f) && (!m || r.machineKey === m) && (!s || d >= s) && (!e || d <= e);
+  });
+}
 
-        function renderDashboard(data) {
-            const factories = ["Terahop 5000", "Pinewave", "Ayutthaya"];
-            const container = document.getElementById('three-factory-container');
-            container.innerHTML = '';
+/* ================== RENDER ================== */
+function render() {
+  applyChrome();
+  const rows = filtered();
+  renderCards(rows); renderChart(rows); renderTop(rows); renderLog(rows);
+}
+function applyChrome() {
+  document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+  document.documentElement.dataset.theme = theme;
+  document.querySelectorAll('[data-i18n]').forEach(el => el.textContent = t(el.dataset.i18n));
+  $('btn-en').classList.toggle('primary', lang === 'en');
+  $('btn-zh').classList.toggle('primary', lang === 'zh');
+  document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+  document.querySelectorAll('.view').forEach(v => v.classList.toggle('hidden', v.dataset.view !== tab));
+  $('updated').textContent = generatedAt ? `${t('updated')}: ${new Date(generatedAt).toLocaleString(lang === 'zh' ? 'zh-CN' : 'en-GB')}` : '';
+  $('fFactory').options[0].textContent = t('all');
+  $('fMachine').options[0].textContent = t('allM');
+}
 
-            factories.forEach(factoryName => {
-                const factoryData = data.filter(d => d.Factory === factoryName);
-                
-                const groupData = {};
-                factoryData.forEach(d => {
-                    const mach = currentLang === 'EN' ? (d.MappedMachineName_EN || d.RawMachineName) : (d.MappedMachineName_CN || d.RawMachineName);
-                    const issue = currentLang === 'EN' ? (d.EnglishIssue || d.RawIssue) : (d.ChineseIssue || d.RawIssue);
-                    if (!groupData[mach]) groupData[mach] = {};
-                    groupData[mach][issue] = (groupData[mach][issue] || 0) + 1;
-                });
+function renderCards(rows) {
+  const card = (name, n, color) => `<div class="panel px-3 py-2" style="border-left:4px solid ${color}">
+    <div class="lbl">${esc(name)}</div><div class="text-2xl font-bold leading-tight">${n}<span class="lbl ml-1">${t('cases')}</span></div></div>`;
+  $('cards').innerHTML = FACTORIES.map(f => card(f, rows.filter(r => r.factory === f).length, FCOLOR[f])).join('') + card(t('total'), rows.length, css('--muted'));
+}
 
-                let topRowsHtml = '';
+function renderChart(rows) {
+  if ($('chartWrap').offsetParent === null && tab !== 'overview') { /* hidden tab: still build so export works */ }
+  const agg = new Map();
+  rows.forEach(r => { const a = agg.get(r.machineKey) || { label: mName(r), factory: r.factory, n: 0 }; a.n++; agg.set(r.machineKey, a); });
+  const items = [...agg.values()].sort((a, b) => b.n - a.n);
+  $('chartWrap').style.height = Math.max(280, items.length * 30 + 70) + 'px';   // auto height
+  if (chart) chart.destroy();
+  const txt = css('--text'), grid = css('--line');
+  chart = detailChartInstance = new Chart($('detailChart'), {
+    type: 'bar',
+    data: { labels: items.map(i => i.label),
+      datasets: [{ label: t('cases'), data: items.map(i => i.n), backgroundColor: items.map(i => FCOLOR[i.factory]), borderRadius: 3, barThickness: 18 }] },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false, color: txt,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { afterLabel: c => items[c.dataIndex].factory } } },
+      scales: { x: { beginAtZero: true, ticks: { precision: 0, color: txt }, grid: { color: grid } },
+                y: { ticks: { autoSkip: false, color: txt }, grid: { display: false } } }
+    },
+    plugins: [{ id: 'bg', beforeDraw(c) { const x = c.ctx; x.save(); x.globalCompositeOperation = 'destination-over'; x.fillStyle = css('--panel'); x.fillRect(0, 0, c.width, c.height); x.restore(); } }]
+  });
+}
 
-                Object.keys(groupData).forEach(mach => {
-                    let sorted = Object.entries(groupData[mach])
-                        .map(([issue, count]) => ({ issue, count }))
-                        .sort((a,b) => a.count - b.count);
+function renderTop(rows) {
+  const byM = new Map();
+  rows.forEach(r => {
+    const m = byM.get(r.machineKey) || { factory: r.factory, name: mName(r), issues: new Map() };
+    const key = r.issueEn || r.issueRaw || '-';
+    const i = m.issues.get(key) || { text: pick(key, r.issueCn), n: 0 };
+    i.n++; m.issues.set(key, i); byM.set(r.machineKey, m);
+  });
+  let html = '';
+  [...byM.values()].sort((a, b) => FACTORIES.indexOf(a.factory) - FACTORIES.indexOf(b.factory) || a.name.localeCompare(b.name)).forEach(m => {
+    const list = [...m.issues.values()].sort((a, b) => b.n - a.n);
+    const cut = list[Math.min(2, list.length - 1)].n;       // tie-break: keep everything >= 3rd place count
+    const top = list.filter(i => i.n >= cut);
+    top.forEach((i, idx) => {
+      const rank = top.findIndex(x => x.n === i.n) + 1;
+      html += `<tr><td>${idx === 0 ? `<span class="dot" style="background:${FCOLOR[m.factory]}"></span>${esc(m.factory)}` : ''}</td>
+        <td>${idx === 0 ? esc(m.name) : ''}</td><td class="font-semibold">${rank}</td><td>${esc(i.text)}</td>
+        <td class="text-right font-semibold">${i.n}</td></tr>`;
+    });
+  });
+  $('tblTop').tBodies[0].innerHTML = html || `<tr><td colspan="5" class="text-center lbl">${t('empty')}</td></tr>`;
+}
 
-                    sorted.forEach(item => {
-                        topRowsHtml += `
-                            <tr class="hover:bg-gray-50 text-sm">
-                                <td class="p-3 font-semibold text-gray-800">${mach}</td>
-                                <td class="p-3 text-red-600 font-medium">${item.issue}</td>
-                                <td class="p-3 font-bold text-center text-blue-900">${item.count}</td>
-                            </tr>
-                        `;
-                    });
-                });
+function renderLog(rows) {
+  $('logCount').textContent = `${rows.length} ${t('cases')}`;
+  const sub = v => (lang === 'zh' && v) ? `<div class="lbl">${esc(v)}</div>` : '';
+  $('tblLog').tBodies[0].innerHTML = rows.map(r => `<tr class="align-top">
+    <td class="whitespace-nowrap">${esc((r.timestamp || '').replace('T', ' ').slice(0, 16))}</td>
+    <td class="whitespace-nowrap"><span class="dot" style="background:${FCOLOR[r.factory]}"></span>${esc(r.factory)}</td>
+    <td>${esc(mName(r))}</td>
+    <td>${esc(r.issueEn || r.issueRaw)}${sub(r.issueCn)}</td>
+    <td>${esc(r.solutionEn || r.solutionRaw)}${sub(r.solutionCn)}</td></tr>`).join('')
+    || `<tr><td colspan="5" class="text-center lbl">${t('empty')}</td></tr>`;
+}
 
-                container.innerHTML += `
-                    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 flex flex-col justify-between space-y-6">
-                        <div>
-                            <div class="flex justify-between items-center border-b pb-3 mb-4">
-                                <h3 class="font-bold text-xl text-slate-800">${factoryName}</h3>
-                                <span class="text-sm bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full font-bold">${uiText[currentLang].totalIssues}: ${factoryData.length}</span>
-                            </div>
-                            
-                            <div class="relative w-full mb-6" style="height: 360px;">
-                                <canvas id="chart-${factoryName.replace(/\s+/g, '')}"></canvas>
-                            </div>
+/* ================== EXPORT ================== */
+function exportPNG() {
+  if (!detailChartInstance) return;
+  const a = document.createElement('a');
+  a.href = detailChartInstance.toBase64Image('image/png', 1);
+  a.download = 'issue-chart-' + new Date().toISOString().slice(0, 10) + '.png'; a.click();
+}
+function exportCSV() {
+  const head = ['Time','Factory','Machine (EN)','Machine (CN)','Issue (EN)','Issue (CN)','Solution (EN)','Solution (CN)','Category'];
+  const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+  const lines = [head.map(q).join(',')].concat(filtered().map(r =>
+    [r.timestamp, r.factory, r.machineEn, r.machineCn, r.issueEn, r.issueCn, r.solutionEn, r.solutionCn, r.category].map(q).join(',')));
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['\uFEFF' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' }));
+  a.download = 'issue-log-' + new Date().toISOString().slice(0, 10) + '.csv'; a.click(); URL.revokeObjectURL(a.href);
+}
 
-                            <div class="bg-gray-50 rounded-xl p-3 border border-gray-100">
-                                <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">${uiText[currentLang].top3Title}</h4>
-                                <div class="overflow-x-auto max-h-64 overflow-y-auto">
-                                    <table class="w-full text-left border-collapse">
-                                        <thead>
-                                            <tr class="text-gray-500 text-xs uppercase border-b">
-                                                <th class="p-2">Machine</th>
-                                                <th class="p-2">Issue</th>
-                                                <th class="p-2 text-center">Qty (น้อย➔มาก)</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody class="divide-y divide-gray-100">
-                                            ${topRowsHtml || `<tr><td colspan="3" class="p-3 text-center text-sm text-gray-400">No data</td></tr>`}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
+/* ================== EVENTS ================== */
+$('btn-en').onclick = () => { lang = 'en'; localStorage.setItem('lang', lang); buildMachineOptions(); render(); };
+$('btn-zh').onclick = () => { lang = 'zh'; localStorage.setItem('lang', lang); buildMachineOptions(); render(); };
+$('btnTheme').onclick = () => { theme = theme === 'dark' ? 'light' : 'dark'; localStorage.setItem('theme', theme); render(); };
+document.querySelectorAll('.tab').forEach(b => b.onclick = () => { tab = b.dataset.tab; render(); });
+$('fFactory').onchange = () => { buildMachineOptions(); render(); };
+['fMachine', 'fStart', 'fEnd'].forEach(id => $(id).onchange = render);
+$('btnReset').onclick = () => { ['fFactory', 'fMachine', 'fStart', 'fEnd'].forEach(id => $(id).value = ''); buildMachineOptions(); render(); };
+$('btnPng').onclick = exportPNG;
+$('btnCsv').onclick = exportCSV;
+$('btnPrint').onclick = () => window.print();
+window.addEventListener('beforeprint', () => { if (chart) chart.resize(); });
 
-                        <div class="flex justify-end pt-3 border-t">
-                            <button onclick="openModal('${factoryName}')" class="bg-slate-800 hover:bg-slate-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition shadow-sm flex items-center gap-1.5">
-                                ${uiText[currentLang].detailsBtn}
-                            </button>
-                        </div>
-                    </div>
-                `;
-
-                setTimeout(() => renderMiniChart(factoryName, factoryData), 50);
-            });
-        }
-
-        function renderMiniChart(factoryName, data) {
-            const canvasId = `chart-${factoryName.replace(/\s+/g, '')}`;
-            const ctx = document.getElementById(canvasId);
-            if (!ctx) return;
-
-            const counts = {};
-            data.forEach(d => {
-                const mach = currentLang === 'EN' ? (d.MappedMachineName_EN || d.RawMachineName) : (d.MappedMachineName_CN || d.RawMachineName);
-                counts[mach] = (counts[mach] || 0) + 1;
-            });
-
-            const sortedEntries = Object.entries(counts).sort((a, b) => a[1] - b[1]);
-            const labels = sortedEntries.map(e => e[0]);
-            const values = sortedEntries.map(e => e[1]);
-
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: values,
-                        backgroundColor: '#3b82f6',
-                        borderRadius: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { ticks: { font: { size: 11 } } },
-                        y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 11 } } }
-                    }
-                }
-            });
-        }
-
-        function openModal(factoryName) {
-            activeFactoryModal = factoryName;
-            document.getElementById('detailModal').classList.remove('hidden');
-            document.getElementById('modalTitle').innerText = `Factory Detail: ${factoryName}`;
-            
-            const factoryData = filterCurrentData().filter(d => d.Factory === factoryName);
-            renderModalContent(factoryData);
-        }
-
-        function closeModal() {
-            document.getElementById('detailModal').classList.add('hidden');
-        }
-
-        function renderModalContent(data) {
-            const ctx = document.getElementById('modalDetailChart').getContext('2d');
-            if (modalChartInstance) modalChartInstance.destroy();
-
-            const mapCounts = {};
-            data.forEach(d => {
-                const mach = currentLang === 'EN' ? (d.MappedMachineName_EN || d.RawMachineName) : (d.MappedMachineName_CN || d.RawMachineName);
-                const issue = currentLang === 'EN' ? (d.EnglishIssue || d.RawIssue) : (d.ChineseIssue || d.RawIssue);
-                const key = `${mach} | ${issue}`;
-                mapCounts[key] = (mapCounts[key] || 0) + 1;
-            });
-
-            const sortedChartEntries = Object.entries(mapCounts).sort((a, b) => a[1] - b[1]);
-            const labels = sortedChartEntries.map(e => e[0]);
-            const values = sortedChartEntries.map(e => e[1]);
-
-            modalChartInstance = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Frequency (Times)',
-                        data: values,
-                        backgroundColor: '#0d9488',
-                        borderRadius: 4
-                    }]
-                },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { beginAtZero: true, ticks: { stepSize: 1 } },
-                        y: { ticks: { font: { size: 12 } } }
-                    }
-                }
-            });
-
-            const tbody = document.getElementById('modalTableBody');
-            tbody.innerHTML = '';
-
-            const machineGroups = {};
-            data.forEach(d => {
-                const mach = currentLang === 'EN' ? (d.MappedMachineName_EN || d.RawMachineName) : (d.MappedMachineName_CN || d.RawMachineName);
-                const issue = currentLang === 'EN' ? (d.EnglishIssue || d.RawIssue) : (d.ChineseIssue || d.RawIssue);
-
-                if (!machineGroups[mach]) machineGroups[mach] = {};
-                machineGroups[mach][issue] = (machineGroups[mach][issue] || 0) + 1;
-            });
-
-            Object.keys(machineGroups).forEach(mach => {
-                const sortedIssues = Object.entries(machineGroups[mach])
-                    .map(([issue, count]) => ({ issue, count }))
-                    .sort((a, b) => a.count - b.count);
-
-                const rowspan = sortedIssues.length;
-
-                sortedIssues.forEach((item, index) => {
-                    let trHtml = `<tr class="hover:bg-gray-50 transition border-b border-gray-200">`;
-                    
-                    if (index === 0) {
-                        trHtml += `
-                            <td rowspan="${rowspan}" class="p-4 font-bold text-blue-950 text-lg align-top bg-blue-50/50 border-r border-gray-300">
-                                ${mach}
-                            </td>
-                        `;
-                    }
-
-                    trHtml += `
-                        <td class="p-4 text-red-600 font-medium border-r border-gray-200">${item.issue}</td>
-                        <td class="p-4 font-bold text-gray-800 text-center text-lg bg-gray-50/30">${item.count}</td>
-                    </tr>`;
-
-                    tbody.innerHTML += trHtml;
-                });
-            });
-        }
-
-        function exportChartImage() {
-            if (!modalChartInstance) return;
-            const link = document.createElement('a');
-            link.download = `${activeFactoryModal}-chart-ascending.png`;
-            link.href = modalChartInstance.toBase64Image();
-            link.click();
-        }
-
-        fetchData();
-    </script>
+/* ================== DEMO DATA (used only when GAS_URL is empty) ================== */
+function demoData() {
+  const mk = (f, d, raw, no, cn, ie, ic, se, sc) => ({ id: Math.random(), factory: f, timestamp: d, machineRaw: raw, machineNo: no,
+    machineKey: f + '|' + raw.toLowerCase() + '|' + no.replace(/\D/g, ''), machineEn: raw + ' ' + no, machineCn: cn,
+    issueRaw: ie, issueEn: ie, issueCn: ic, solutionRaw: se, solutionEn: se, solutionCn: sc, category: '' });
+  const v = ['Vision system cannot locate material.', '视觉系统无法定位物料', 'Check lighting conditions and reset vision.', '检查光照并重置视觉'];
+  const s = ['Sensor timeout on station 2.', '工位2传感器超时', 'Clean sensor and re-teach position.', '清洁传感器并重新示教'];
+  const p = ['Air pressure low.', '气压过低', 'Check compressor and air lines.', '检查压缩机与气管'];
+  return [
+    mk('Ayutthaya', '2026-10-28T09:12:00', 'Pad Mounting-ENG-(2.0)', '2#', '贴片机2.0 2#', ...v),
+    mk('Ayutthaya', '2026-10-28T13:40:00', 'Pad Mounting-ENG-(2.0)', '2#', '贴片机2.0 2#', ...v),
+    mk('Ayutthaya', '2026-10-29T08:05:00', 'BOSA-Axxon', '1#', '', ...s),
+    mk('Terahop 5000', '2026-10-27T15:20:00', 'ISO-ENG-(2.0)', '4#', '隔离器2.0 4#', ...p),
+    mk('Terahop 5000', '2026-10-29T10:30:00', 'ISO-ENG-(2.0)', '4#', '隔离器2.0 4#', ...s),
+    mk('Pinewave', '2026-10-30T07:45:00', 'ISO-LQ-(1.0)', '1#', '猎奇1.0 1# 隔离器', ...p),
+    mk('Pinewave', '2026-10-30T09:10:00', 'ISO-LQ-(1.0)', '1#', '猎奇1.0 1# 隔离器', ...v)
+  ];
+}
+load();
+</script>
 </body>
 </html>
