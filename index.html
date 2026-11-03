@@ -443,7 +443,6 @@ function renderTop(rows) {
 
 /* ================== MODEL SUMMARY TAB (Using PreMapped Column with Language Support & Clean Drill-down) ================== */
 function getPreMappedName(r) {
-  // รองรับการแสดงผลทั้งภาษาไทย/อังกฤษ และภาษาจีนตามการตั้งค่าภาษา
   if (lang === 'zh' && r.preMappedCn) return r.preMappedCn;
   return r.preMapped || r.machineRaw || '-';
 }
