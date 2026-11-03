@@ -157,7 +157,7 @@
 <script>
 /* ================== CONFIG ================== */
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxNht563H7COeUnwfF4NUImMsv3bFGoIpiHsE4h1tTrPFemxnskTOBsCw02zQ-ts7G8/exec';
-const APP_VERSION = 'v13-2026-11-03';
+const APP_VERSION = 'v14-2026-11-03';
 const FACTORIES = ['Ayutthaya', 'Terahop 5000', 'Pinewave'];
 const FCOLOR = { 'Ayutthaya': '#2dd4bf', 'Terahop 5000': '#f59e0b', 'Pinewave': '#a78bfa' };
 
@@ -167,8 +167,8 @@ const I18N = {
     all:'All factories', allM:'All machines', cases:'cases', chartTitle:'Issues per machine',
     tabOverview:'Overview', tabModel:'Model Summary', allB:'All brands', allMod:'All models',
     colMachine:'Machine', brand:'Brand', model:'Model', mAll:'All models', mBack:'← Back', mChart1:'Issues per model', mChart2:'Machines in model:', mChart3:'Issues on machine:', mHint1:'Click a bar to see the machines of that model.', mHint2:'Click a bar to see the issues of that machine.',
-    modelTitle:'Issues grouped by Brand + Model',
-    modelNote:'Aggregated by Brand + Model across all machines, sorted descending (most → least).',
+    modelTitle:'Issues grouped by Model (PreMapped)',
+    modelNote:'Aggregated by custom pre-mapped column across all machines, sorted descending (most → least).',
     topIssue:'Top Issue & Breakdown', repTitle:'Non-Standard Problem Report', repLog:'Issue log',
     rec:'Recurring issues (2+ times)', one:'One-off issues', generated:'Generated', nRec:'Recurring issue types',
     nOne:'One-off issues', dateRange:'Date', back:'← All machines', rankCol:'Rank', chartMachine:'Issues on',
@@ -181,8 +181,8 @@ const I18N = {
     all:'全部工厂', allM:'全部机器', cases:'起', chartTitle:'各机器问题统计',
     tabOverview:'概览', tabModel:'机型排行', allB:'全部品牌', allMod:'全部机型',
     colMachine:'机器', brand:'品牌', model:'机型', mAll:'全部机型', mBack:'← 返回', mChart1:'各机型问题数', mChart2:'机型中的机器：', mChart3:'问题统计：', mHint1:'点击柱子查看该机型的机器。', mHint2:'点击柱子查看该机器的问题。',
-    modelTitle:'按品牌 + 机型汇总的问题',
-    modelNote:'跨所有机器按品牌和机型聚合，降序排列（由多到少）。',
+    modelTitle:'按自定义映射机型汇总的问题',
+    modelNote:'跨所有机器按预设映射列聚合，降序排列（由多到少）。',
     topIssue:'主要问题及明细', repTitle:'非标准问题报告', repLog:'问题记录',
     rec:'重复发生的问题（2次及以上）', one:'仅发生一次的问题', generated:'生成时间',
     nRec:'重复问题种类', nOne:'单次问题', dateRange:'日期', back:'← 全部机器', rankCol:'名次',
@@ -199,7 +199,7 @@ const t = k => I18N[lang][k] || k;
 /* ================== STATE ================== */
 let DATA = [], chart = null, detailChartInstance = null, generatedAt = null, tab = 'overview';
 const $ = id => document.getElementById(id);
-const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;}[c]));
 const mName = r => (lang === 'zh' && r.machineCn) ? r.machineCn : r.machineEn;
 const pick = (en, cn) => (lang === 'zh' && cn) ? cn : en;
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
@@ -272,7 +272,7 @@ function applyChrome() {
   $('fMachine').options[0].textContent = t('allM');
   $('fBrand').options[0].textContent = t('allB');
   $('fModel').options[0].textContent = t('allMod');
-  $('thModel').textContent = t('brand') + ' + ' + t('model');
+  $('thModel').textContent = lang === 'zh' ? '映射机型' : 'PreMapped Model';
 }
 
 function renderCards(rows) {
@@ -431,19 +431,13 @@ function renderTop(rows) {
   $('tblTop').tBodies[0].innerHTML = html || `<tr><td colspan="5" class="text-center lbl">${t('empty')}</td></tr>`;
 }
 
-/* ================== MODEL SUMMARY TAB (Drill-down supported + Clean Model Names) ================== */
-function fullModelName(r) {
-  // สร้างชื่อเต็มตาม Keyword โดยไม่เอาเลขเครื่อง (เช่น ISO-LQ-(1.0) หรือชื่อจีน)
-  const b = (lang === 'zh' && r.brandCn) ? r.brandCn : r.brandEn;
-  const fn = (lang === 'zh' && r.functionCn) ? r.functionCn : r.functionEn;
-  const mod = r.model ? `(${r.model})` : '';
-  if (fn && b && mod) return `${fn}-${b}-${mod}`;
-  if (b && mod) return `${b}-${mod}`;
-  const parts = [b, r.model].filter(Boolean);
-  return parts.length ? parts.join(' ') : (r.machineRaw || '-');
+/* ================== MODEL SUMMARY TAB (Using PreMapped Column) ================== */
+function getPreMappedName(r) {
+  // ดึงค่าจากคอลัมน์ PreMapped ที่จับคู่ไว้แล้ว (ถ้าเปลี่ยนภาษาเป็นจีนและมีข้อมูล ให้ดึงตามที่ต้องการ หรือใช้ค่า PreMapped ตรงๆ)
+  return r.preMapped || r.machineRaw || '-';
 }
 
-const modelKeyOf = r => (r.brandEn || r.model) ? (r.brandEn || '') + '|' + (r.model || '') + '|' + (r.functionEn || '') : 'raw|' + (r.machineRaw || '');
+const modelKeyOf = r => getPreMappedName(r);
 let modelNav = { model: null, machine: null };
 let modelChartInst = null;
 
@@ -462,7 +456,7 @@ function groupRows(rows, keyFn, labelFn) {
 function renderModelTab(rows) {
   const byDesc = (a, b) => b.n - a.n || a.label.localeCompare(b.label);
 
-  const models = groupRows(rows, modelKeyOf, fullModelName);
+  const models = groupRows(rows, modelKeyOf, getPreMappedName);
   if (modelNav.model && !models.some(g => g.key === modelNav.model)) modelNav = { model: null, machine: null };
   let scope = modelNav.model ? rows.filter(r => modelKeyOf(r) === modelNav.model) : rows;
   const machines = modelNav.model ? groupRows(scope, r => r.machineKey, mName) : [];
@@ -486,7 +480,7 @@ function renderModelTab(rows) {
   $('modelCrumb').innerHTML = crumb.join('<span class="lbl">›</span>');
   $('modelChartTitle').textContent = level === 1 ? t('modelTitle') : level === 2 ? `${t('mChart2')} ${modelG.label}` : `${t('mChart3')} ${machineG.label}`;
   $('modelHint').textContent = level === 1 ? t('mHint1') : level === 2 ? t('mHint2') : '';
-  $('thModel').textContent = level === 1 ? t('brand') + ' + ' + t('model') : t('colMachine');
+  $('thModel').textContent = level === 1 ? (lang === 'zh' ? '映射机型' : 'PreMapped Model') : t('colMachine');
 
   if (modelChartInst) { modelChartInst.destroy(); modelChartInst = null; }
   const wrapLines = level === 3 ? items.reduce((sum, i) => sum + Math.max(1, wrap(i.label, 46).length), 0) : items.length;
@@ -544,10 +538,10 @@ function exportPNG() {
   a.download = 'issue-chart-' + new Date().toISOString().slice(0, 10) + '.png'; a.click();
 }
 function exportCSV() {
-  const head = ['Time','Factory','Machine (EN)','Machine (CN)','Brand (EN)','Function (EN)','Model','Issue (EN)','Issue (CN)','Solution (EN)','Solution (CN)','Category'];
+  const head = ['Time','Factory','Machine (EN)','Machine (CN)','PreMapped','Issue (EN)','Issue (CN)','Solution (EN)','Solution (CN)'];
   const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
   const lines = [head.map(q).join(',')].concat(filtered().map(r =>
-    [r.timestamp, r.factory, r.machineEn, r.machineCn, r.brandEn, r.functionEn, r.model, r.issueEn, r.issueCn, r.solutionEn, r.solutionCn, r.category].map(q).join(',')));
+    [r.timestamp, r.factory, r.machineEn, r.machineCn, r.preMapped, r.issueEn, r.issueCn, r.solutionEn, r.solutionCn].map(q).join(',')));
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob(['\uFEFF' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' }));
   a.download = 'issue-log-' + new Date().toISOString().slice(0, 10) + '.csv'; a.click(); URL.revokeObjectURL(a.href);
@@ -575,29 +569,18 @@ window.addEventListener('beforeprint', () => { buildReport(); });
 
 /* ================== DEMO DATA ================== */
 function demoBase() {
-  const mk = (f, d, raw, no, cn, ie, ic, se, sc) => ({ id: Math.random(), factory: f, timestamp: d, machineRaw: raw, machineNo: no,
-    machineKey: f + '|' + raw.toLowerCase() + '|' + no.replace(/\D/g, ''), machineEn: raw + ' ' + no, machineCn: cn,
+  const mk = (f, d, raw, no, cn, pre, ie, ic, se, sc) => ({ id: Math.random(), factory: f, timestamp: d, machineRaw: raw, machineNo: no,
+    machineKey: f + '|' + raw.toLowerCase() + '|' + no.replace(/\D/g, ''), machineEn: raw + ' ' + no, machineCn: cn, preMapped: pre,
     issueRaw: ie, issueEn: ie, issueCn: ic, solutionRaw: se, solutionEn: se, solutionCn: sc, category: '' });
   const v = ['Vision system cannot locate material.', '视觉系统无法定位物料', 'Check lighting conditions and reset vision.', '检查光照并重置视觉'];
   const s = ['Sensor timeout on station 2.', '工位2传感器超时', 'Clean sensor and re-teach position.', '清洁传感器并重新示教'];
-  const p = ['Air pressure low.', '气压过低', 'Check compressor and air lines.', '检查压缩机与气管'];
   return [
-    mk('Ayutthaya', '2026-10-28T09:12:00', 'Pad Mounting-ENG-(2.0)', '2#', '贴片机2.0 2#', ...v),
-    mk('Ayutthaya', '2026-10-28T13:40:00', 'Pad Mounting-ENG-(2.0)', '2#', '贴片机2.0 2#', ...v),
-    mk('Ayutthaya', '2026-10-29T08:05:00', 'BOSA-Axxon', '1#', '', ...s),
-    mk('Terahop 5000', '2026-10-27T15:20:00', 'ISO-ENG-(2.0)', '4#', '隔离器2.0 4#', ...p),
-    mk('Terahop 5000', '2026-10-29T10:30:00', 'ISO-ENG-(2.0)', '4#', '隔离器2.0 4#', ...s),
-    mk('Pinewave', '2026-10-30T07:45:00', 'ISO-LQ-(1.0)', '1#', '猎奇1.0 1# 隔离器', ...p),
-    mk('Pinewave', '2026-10-30T09:10:00', 'ISO-LQ-(1.0)', '1#', '猎奇1.0 1# 隔离器', ...v)
+    mk('Ayutthaya', '2026-10-28T09:12:00', 'Pad Mounting', '2#', '贴片机 2#', 'ENG 2.0 Pad Mounting', ...v),
+    mk('Ayutthaya', '2026-10-28T13:40:00', 'Pad Mounting', '2#', '贴片机 2#', 'ENG 2.0 Pad Mounting', ...v),
+    mk('Pinewave', '2026-10-30T07:45:00', 'ISO', '1#', '猎奇 1# 隔离器', '猎奇 1.0 隔离器', ...s)
   ];
 }
-const DEMO_KW = {
-  'ISO-LQ-(1.0)': { brandEn: 'LQ', brandCn: '猎奇', functionEn: 'ISO', functionCn: '隔离器', model: '1.0' },
-  'ISO-ENG-(2.0)': { brandEn: 'ENG', brandCn: '英格', functionEn: 'ISO', functionCn: '隔离器', model: '2.0' },
-  'Pad Mounting-ENG-(2.0)': { brandEn: 'ENG', brandCn: '英格', functionEn: 'Pad Mounting', functionCn: '贴片', model: '2.0' },
-  'BOSA-Axxon': { brandEn: 'Axxon', brandCn: '艾克森', functionEn: 'BOSA', functionCn: 'BOSA', model: '' }
-};
-function demoData() { return demoBase().map(r => Object.assign(r, DEMO_KW[r.machineRaw] || {})); }
+function demoData() { return demoBase(); }
 load();
 </script>
 </body>
