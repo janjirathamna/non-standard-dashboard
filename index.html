@@ -523,7 +523,7 @@ function renderModelTab(rows) {
     const sub = level === 1 ? `${g.n} ${t('cases')} · ${g.machines.size} ${t('machinesWord') || 'machines'}` : `${esc(g.factory)} · ${g.n} ${t('cases')}`;
     return iss.map((i, idx) => `<tr class="${idx === 0 ? 'grp' : ''}">
       ${idx === 0 ? `<td class="gname" rowspan="${iss.length}">${esc(g.label)}<div class="lbl font-normal">${sub}</div></td>` : ''}
-      <td>${esc(i.label)) ? esc(i.label) : ''}</td><td class="cnt">${i.n}</td></tr>`).join('');
+      <td>${esc(i.label)}</td><td class="cnt">${i.n}</td></tr>`).join('');
   }).join('') || `<tr><td colspan="3" class="text-center lbl">${t('empty')}</td></tr>`;
 }
 
