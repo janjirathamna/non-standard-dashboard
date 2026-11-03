@@ -122,12 +122,16 @@
   </section>
 
   <section class="view panel p-3 hidden" data-view="model">
+    <div class="flex items-center gap-2 flex-wrap mb-2">
+      <button id="mBack" class="btn" style="display:none"></button>
+      <div id="modelCrumb" class="flex items-center gap-1 flex-wrap text-xs"></div>
+    </div>
     <div class="font-semibold mb-1" id="modelChartTitle"></div>
-    <p class="lbl mb-2" id="modelNote"></p>
+    <div class="lbl mb-1" id="modelHint"></div>
     <div id="modelChartWrap" class="relative w-full mb-3"><canvas id="modelChart"></canvas></div>
     <div class="scroll">
       <table class="w-full" id="tblModel">
-        <thead><tr><th id="thModel"></th><th data-i18n="topIssue"></th><th class="text-right" data-i18n="times"></th></tr></thead>
+        <thead><tr><th id="thModel"></th><th data-i18n="issue"></th><th class="text-right" data-i18n="times"></th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
@@ -153,7 +157,7 @@
 <script>
 /* ================== CONFIG ================== */
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxNht563H7COeUnwfF4NUImMsv3bFGoIpiHsE4h1tTrPFemxnskTOBsCw02zQ-ts7G8/exec';
-const APP_VERSION = 'v12-2026-11-03';
+const APP_VERSION = 'v13-2026-11-03';
 const FACTORIES = ['Ayutthaya', 'Terahop 5000', 'Pinewave'];
 const FCOLOR = { 'Ayutthaya': '#2dd4bf', 'Terahop 5000': '#f59e0b', 'Pinewave': '#a78bfa' };
 
@@ -162,7 +166,8 @@ const I18N = {
   en: { title:'Non-Standard Problem Report', addData:'＋ Add Data', factory:'Factory', machine:'Machine', reset:'Reset',
     all:'All factories', allM:'All machines', cases:'cases', chartTitle:'Issues per machine',
     tabOverview:'Overview', tabModel:'Model Summary', allB:'All brands', allMod:'All models',
-    colMachine:'Machine', brand:'Brand', model:'Model', modelTitle:'Issues grouped by Brand + Model',
+    colMachine:'Machine', brand:'Brand', model:'Model', mAll:'All models', mBack:'← Back', mChart1:'Issues per model', mChart2:'Machines in model:', mChart3:'Issues on machine:', mHint1:'Click a bar to see the machines of that model.', mHint2:'Click a bar to see the issues of that machine.',
+    modelTitle:'Issues grouped by Brand + Model',
     modelNote:'Aggregated by Brand + Model across all machines, sorted descending (most → least).',
     topIssue:'Top Issue & Breakdown', repTitle:'Non-Standard Problem Report', repLog:'Issue log',
     rec:'Recurring issues (2+ times)', one:'One-off issues', generated:'Generated', nRec:'Recurring issue types',
@@ -175,7 +180,8 @@ const I18N = {
   zh: { title:'非标准问题报告', addData:'＋ 添加数据', factory:'工厂', machine:'机器', reset:'重置',
     all:'全部工厂', allM:'全部机器', cases:'起', chartTitle:'各机器问题统计',
     tabOverview:'概览', tabModel:'机型排行', allB:'全部品牌', allMod:'全部机型',
-    colMachine:'机器', brand:'品牌', model:'机型', modelTitle:'按品牌 + 机型汇总的问题',
+    colMachine:'机器', brand:'品牌', model:'机型', mAll:'全部机型', mBack:'← 返回', mChart1:'各机型问题数', mChart2:'机型中的机器：', mChart3:'问题统计：', mHint1:'点击柱子查看该机型的机器。', mHint2:'点击柱子查看该机器的问题。',
+    modelTitle:'按品牌 + 机型汇总的问题',
     modelNote:'跨所有机器按品牌和机型聚合，降序排列（由多到少）。',
     topIssue:'主要问题及明细', repTitle:'非标准问题报告', repLog:'问题记录',
     rec:'重复发生的问题（2次及以上）', one:'仅发生一次的问题', generated:'生成时间',
@@ -267,8 +273,6 @@ function applyChrome() {
   $('fBrand').options[0].textContent = t('allB');
   $('fModel').options[0].textContent = t('allMod');
   $('thModel').textContent = t('brand') + ' + ' + t('model');
-  $('modelChartTitle').textContent = t('modelTitle');
-  $('modelNote').textContent = t('modelNote');
 }
 
 function renderCards(rows) {
@@ -299,7 +303,6 @@ function chartModel(rows) {
   } else {
     rows.forEach(r => { const a = agg.get(r.machineKey) || { key: r.machineKey, label: mName(r), factory: r.factory, n: 0 }; a.n++; agg.set(r.machineKey, a); });
   }
-  // เรียงจากมากไปน้อย (Descending: b.n - a.n)
   const items = [...agg.values()].sort((a, b) => b.n - a.n);
   const machineName = sel && rows.length ? mName(rows[0]) : '';
   return { sel, items, maxN: items.length ? items[0].n : 0,
@@ -311,7 +314,7 @@ function chartConfig(m, pal, live) {
   return {
     type: 'bar',
     data: { labels: items.map(i => sel ? wrap(i.label) : i.label),
-      datasets: [{ label: t('cases'), data: items.map(i => i.n), backgroundColor: items.map(i => FCOLOR[i.factory]), borderRadius: 4, barThickness: live ? 26 : 18 }] },
+      datasets: [{ label: t('cases'), data: items.map(i => i.n), backgroundColor: items.map(i => FCOLOR[i.factory] || pal.accent), borderRadius: 4, barThickness: live ? 26 : 18 }] },
     options: Object.assign({
       indexAxis: 'y', color: pal.txt,
       plugins: { legend: { display: false },
@@ -342,7 +345,7 @@ function renderChart(rows) {
   $('btnBack').classList.toggle('hidden', !m.sel);
   $('chartWrap').style.height = Math.max(280, m.items.length * (m.sel ? 54 : 42) + 70) + 'px';
   if (chart) chart.destroy();
-  chart = detailChartInstance = new Chart($('detailChart'), chartConfig(m, { txt: css('--text'), grid: css('--line'), bg: css('--panel') }, true));
+  chart = detailChartInstance = new Chart($('detailChart'), chartConfig(m, { txt: css('--text'), grid: css('--line'), bg: css('--panel'), accent: css('--accent') }, true));
 }
 
 function chartImage(rows) {
@@ -352,7 +355,7 @@ function chartImage(rows) {
   cv.width = 900; cv.height = Math.max(180, m.items.length * (m.sel ? 44 : 28) + 60);
   cv.style.cssText = 'position:fixed;left:-9999px;top:0';
   document.body.appendChild(cv);
-  const c = new Chart(cv, chartConfig(m, { txt: '#111', grid: '#ddd', bg: '#fff' }, false));
+  const c = new Chart(cv, chartConfig(m, { txt: '#111', grid: '#ddd', bg: '#fff', accent: '#0f766e' }, false));
   const url = c.toBase64Image('image/png', 1);
   c.destroy(); cv.remove();
   return { url, title: m.title };
@@ -428,76 +431,96 @@ function renderTop(rows) {
   $('tblTop').tBodies[0].innerHTML = html || `<tr><td colspan="5" class="text-center lbl">${t('empty')}</td></tr>`;
 }
 
-function modelLabel(r) {
+/* ================== MODEL SUMMARY TAB (Drill-down supported + Clean Model Names) ================== */
+function fullModelName(r) {
+  // สร้างชื่อเต็มตาม Keyword โดยไม่เอาเลขเครื่อง (เช่น ISO-LQ-(1.0) หรือชื่อจีน)
   const b = (lang === 'zh' && r.brandCn) ? r.brandCn : r.brandEn;
+  const fn = (lang === 'zh' && r.functionCn) ? r.functionCn : r.functionEn;
+  const mod = r.model ? `(${r.model})` : '';
+  if (fn && b && mod) return `${fn}-${b}-${mod}`;
+  if (b && mod) return `${b}-${mod}`;
   const parts = [b, r.model].filter(Boolean);
   return parts.length ? parts.join(' ') : (r.machineRaw || '-');
 }
-const modelKeyOf = r => (r.brandEn || r.model) ? (r.brandEn || '') + '|' + (r.model || '') : 'raw|' + (r.machineRaw || '');
+
+const modelKeyOf = r => (r.brandEn || r.model) ? (r.brandEn || '') + '|' + (r.model || '') + '|' + (r.functionEn || '') : 'raw|' + (r.machineRaw || '');
+let modelNav = { model: null, machine: null };
 let modelChartInst = null;
 
-/* ================== MODEL SUMMARY TAB (Aggregated & Sorted Descending) ================== */
-function renderModelTab(rows) {
-  // รวมกลุ่มตาม Brand + Model ทันที ไม่ต้องมี drill-down ซับซ้อน
+function groupRows(rows, keyFn, labelFn) {
   const map = new Map();
   rows.forEach(r => {
-    const k = modelKeyOf(r);
-    const g = map.get(k) || { key: k, label: modelLabel(r), n: 0, machines: new Set(), issues: new Map() };
-    g.n++;
-    g.machines.add(r.machineKey);
-    const ik = r.issueEn || r.issueRaw || '-';
-    const iss = g.issues.get(ik) || { label: pick(ik, r.issueCn), n: 0 };
-    iss.n++;
-    g.issues.set(ik, iss);
-    map.set(k, g);
+    const k = keyFn(r);
+    const g = map.get(k) || { key: k, label: labelFn(r), factory: r.factory, n: 0, machines: new Set(), issues: new Map() };
+    g.n++; g.machines.add(r.machineKey);
+    const ik = r.issueEn || r.issueRaw || '-', i = g.issues.get(ik) || { label: pick(ik, r.issueCn), n: 0 };
+    i.n++; g.issues.set(ik, i); map.set(k, g);
   });
+  return [...map.values()];
+}
 
-  // เรียงลำดับจาก "มากไปน้อย" (Descending: b.n - a.n)
-  const groups = [...map.values()].sort((a, b) => b.n - a.n || a.label.localeCompare(b.label));
+function renderModelTab(rows) {
+  const byDesc = (a, b) => b.n - a.n || a.label.localeCompare(b.label);
 
-  // กราฟแสดงผลโมเดล จัดอันดับจากมากไปน้อย
-  const items = groups.map(g => ({ label: g.label, n: g.n, color: css('--accent') }));
+  const models = groupRows(rows, modelKeyOf, fullModelName);
+  if (modelNav.model && !models.some(g => g.key === modelNav.model)) modelNav = { model: null, machine: null };
+  let scope = modelNav.model ? rows.filter(r => modelKeyOf(r) === modelNav.model) : rows;
+  const machines = modelNav.model ? groupRows(scope, r => r.machineKey, mName) : [];
+  if (modelNav.machine && !machines.some(g => g.key === modelNav.machine)) modelNav.machine = null;
+  if (modelNav.machine) scope = scope.filter(r => r.machineKey === modelNav.machine);
+  const level = modelNav.machine ? 3 : modelNav.model ? 2 : 1;
+  const modelG = modelNav.model ? models.find(g => g.key === modelNav.model) : null;
+  const machineG = modelNav.machine ? machines.find(g => g.key === modelNav.machine) : null;
+
+  const groups = level === 1 ? models : level === 2 ? machines : [machineG];
+  groups.sort(byDesc);
+
+  let items;
+  if (level < 3) items = groups.map(g => ({ key: g.key, label: g.label, n: g.n, color: level === 1 ? css('--accent') : (FCOLOR[g.factory] || css('--accent')) }));
+  else items = [...machineG.issues.values()].sort(byDesc).map(i => ({ label: i.label, n: i.n, color: FCOLOR[machineG.factory] || css('--accent') }));
+
+  $('mBack').textContent = t('mBack'); $('mBack').style.display = level > 1 ? '' : 'none';
+  const crumb = [`<button class="btn" data-nav="root">${esc(t('mAll'))}</button>`];
+  if (modelG) crumb.push(`<button class="btn" data-nav="model">${esc(modelG.label)}</button>`);
+  if (machineG) crumb.push(`<span class="font-semibold px-1">${esc(machineG.label)}</span>`);
+  $('modelCrumb').innerHTML = crumb.join('<span class="lbl">›</span>');
+  $('modelChartTitle').textContent = level === 1 ? t('modelTitle') : level === 2 ? `${t('mChart2')} ${modelG.label}` : `${t('mChart3')} ${machineG.label}`;
+  $('modelHint').textContent = level === 1 ? t('mHint1') : level === 2 ? t('mHint2') : '';
+  $('thModel').textContent = level === 1 ? t('brand') + ' + ' + t('model') : t('colMachine');
+
   if (modelChartInst) { modelChartInst.destroy(); modelChartInst = null; }
-  $('modelChartWrap').style.height = Math.max(220, items.length * 36 + 70) + 'px';
-
+  const wrapLines = level === 3 ? items.reduce((sum, i) => sum + Math.max(1, wrap(i.label, 46).length), 0) : items.length;
+  $('modelChartWrap').style.height = Math.max(220, level === 3 ? wrapLines * 24 + items.length * 14 + 70 : items.length * 34 + 70) + 'px';
   const txt = css('--text'), grid = css('--line'), maxN = Math.max(0, ...items.map(i => i.n));
+
   modelChartInst = new Chart($('modelChart'), {
     type: 'bar',
-    data: {
-      labels: items.map(i => i.label),
-      datasets: [{ label: t('cases'), data: items.map(i => i.n), backgroundColor: '#2dd4bf', borderRadius: 4, barThickness: 22 }]
-    },
+    data: { labels: items.map(i => level === 3 ? wrap(i.label, 46) : i.label),
+      datasets: [{ label: t('cases'), data: items.map(i => i.n), backgroundColor: items.map(i => i.color), borderRadius: 4, barThickness: 22 }] },
     options: {
       indexAxis: 'y', responsive: true, maintainAspectRatio: false, color: txt,
       plugins: { legend: { display: false }, tooltip: { callbacks: { title: c => items[c[0].dataIndex].label } } },
-      scales: {
-        x: { beginAtZero: true, suggestedMax: Math.max(6, maxN + 1), ticks: { precision: 0, color: txt }, grid: { color: grid } },
-        y: { ticks: { autoSkip: false, color: txt }, grid: { display: false } }
+      scales: { x: { beginAtZero: true, suggestedMax: Math.max(6, maxN + 1), ticks: { precision: 0, color: txt }, grid: { color: grid } },
+                y: { ticks: { autoSkip: false, color: txt }, grid: { display: false } } },
+      onHover: (e, els) => { e.native.target.style.cursor = (level < 3 && els.length) ? 'pointer' : 'default'; },
+      onClick: (e, els) => {
+        if (level === 3 || !els.length) return;
+        const key = items[els[0].index].key;
+        if (level === 1) modelNav = { model: key, machine: null }; else modelNav.machine = key;
+        renderModelTab(filtered());
       }
     },
-    plugins: [{
-      id: 'val', afterDatasetsDraw(c) {
-        const x = c.ctx; x.save(); x.fillStyle = txt; x.font = '600 12px IBM Plex Sans, sans-serif'; x.textBaseline = 'middle';
-        c.getDatasetMeta(0).data.forEach((bar, i) => x.fillText(items[i].n, bar.x + 6, bar.y)); x.restore();
-      }
-    }, {
-      id: 'bg', beforeDraw(c) {
-        const x = c.ctx; x.save(); x.globalCompositeOperation = 'destination-over'; x.fillStyle = css('--panel'); x.fillRect(0, 0, c.width, c.height); x.restore();
-      }
-    }]
+    plugins: [{ id: 'val', afterDatasetsDraw(c) { const x = c.ctx; x.save(); x.fillStyle = txt; x.font = '600 12px IBM Plex Sans, sans-serif'; x.textBaseline = 'middle';
+        c.getDatasetMeta(0).data.forEach((bar, i) => x.fillText(items[i].n, bar.x + 6, bar.y)); x.restore(); } },
+      { id: 'bg', beforeDraw(c) { const x = c.ctx; x.save(); x.globalCompositeOperation = 'destination-over'; x.fillStyle = css('--panel'); x.fillRect(0, 0, c.width, c.height); x.restore(); } }]
   });
 
-  // ตารางสรุป: แสดงแต่ละโมเดล และแจกแจงปัญหาทั้งหมดที่เกิดขึ้นเรียงตามจำนวนครั้ง (มากไปน้อย) พร้อมรวมจำนวนเครื่อง
   $('tblModel').tBodies[0].innerHTML = groups.map(g => {
-    const sortedIssues = [...g.issues.values()].sort((a, b) => b.n - a.n);
-    const subLabel = `${g.n} ${t('cases')} · ${g.machines.size} ${t('machinesWord') || 'machines'}`;
-    return sortedIssues.map((iss, idx) => `
-      <tr class="${idx === 0 ? 'grp' : ''}">
-        ${idx === 0 ? `<td class="gname" rowspan="${sortedIssues.length}">${esc(g.label)}<div class="lbl font-normal">${subLabel}</div></td>` : ''}
-        <td>${esc(iss.label)}</td>
-        <td class="cnt">${iss.n}</td>
-      </tr>
-    `).join('');
+    const iss = [...g.issues.values()].sort(byDesc);
+    const sub = level === 1 ? `${g.n} ${t('cases')} · ${g.machines.size} ${t('machinesWord') || 'machines'}` : `${esc(g.factory)} · ${g.n} ${t('cases')}`;
+    return iss.map((i, idx) => `<tr class="${idx === 0 ? 'grp' : ''}">
+      ${idx === 0 ? `<td class="gname" rowspan="${iss.length}">${esc(g.label)}<div class="lbl font-normal">${sub}</div></td>` : ''}
+      <td>${esc(i.label)}</td><td class="cnt">${i.n}</td></tr>`).join('');
   }).join('') || `<tr><td colspan="3" class="text-center lbl">${t('empty')}</td></tr>`;
 }
 
@@ -534,17 +557,17 @@ function exportCSV() {
 $('btn-en').onclick = () => { lang = 'en'; localStorage.setItem('lang', lang); buildMachineOptions(); render(); };
 $('btn-zh').onclick = () => { lang = 'zh'; localStorage.setItem('lang', lang); buildMachineOptions(); render(); };
 $('btnTheme').onclick = () => { theme = theme === 'dark' ? 'light' : 'dark'; localStorage.setItem('theme', theme); render(); };
-document.querySelectorAll('.tab').forEach(b => b.onclick = () => {
-  tab = b.dataset.tab; render();
-  if (tab === 'model' && modelChartInst) modelChartInst.resize();
-});
+document.querySelectorAll('.tab').forEach(b => b.onclick = () => { tab = b.dataset.tab; render(); if (tab === 'model' && modelChartInst) modelChartInst.resize(); });
 $('fFactory').onchange = () => { buildMachineOptions(); render(); };
 ['fMachine', 'fBrand', 'fModel', 'fStart', 'fEnd'].forEach(id => $(id).onchange = render);
-$('btnReset').onclick = () => {
-  ['fFactory', 'fMachine', 'fBrand', 'fModel', 'fStart', 'fEnd'].forEach(id => $(id).value = '');
-  buildMachineOptions(); render();
-};
+$('btnReset').onclick = () => { modelNav = { model: null, machine: null }; ['fFactory', 'fMachine', 'fBrand', 'fModel', 'fStart', 'fEnd'].forEach(id => $(id).value = ''); buildMachineOptions(); render(); };
 $('btnBack').onclick = () => { $('fMachine').value = ''; render(); };
+$('mBack').onclick = () => { if (modelNav.machine) modelNav.machine = null; else modelNav = { model: null, machine: null }; renderModelTab(filtered()); };
+$('modelCrumb').onclick = e => {
+  const b = e.target.closest('[data-nav]'); if (!b) return;
+  modelNav = b.dataset.nav === 'root' ? { model: null, machine: null } : { model: modelNav.model, machine: null };
+  renderModelTab(filtered());
+};
 $('btnPng').onclick = exportPNG;
 $('btnCsv').onclick = exportCSV;
 $('btnPrint').onclick = () => buildReport().then(() => window.print());
