@@ -157,7 +157,7 @@
 <script>
 /* ================== CONFIG ================== */
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxNht563H7COeUnwfF4NUImMsv3bFGoIpiHsE4h1tTrPFemxnskTOBsCw02zQ-ts7G8/exec';
-const APP_VERSION = 'v14-2026-11-03';
+const APP_VERSION = 'v15-2026-11-03';
 const FACTORIES = ['Ayutthaya', 'Terahop 5000', 'Pinewave'];
 const FCOLOR = { 'Ayutthaya': '#2dd4bf', 'Terahop 5000': '#f59e0b', 'Pinewave': '#a78bfa' };
 
@@ -199,17 +199,7 @@ const t = k => I18N[lang][k] || k;
 /* ================== STATE ================== */
 let DATA = [], chart = null, detailChartInstance = null, generatedAt = null, tab = 'overview';
 const $ = id => document.getElementById(id);
-const esc = function(s) {
-  if (s === null || s === undefined) return '';
-  return String(s).replace(/[&<>"']/g, function(c) {
-    if (c === '&') return '&amp;';
-    if (c === '<') return '&lt;';
-    if (c === '>') return '&gt;';
-    if (c === '"') return '&quot;';
-    if (c === "'") return '&#39;';
-    return c;
-  });
-};
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;}[c]));
 const mName = r => (lang === 'zh' && r.machineCn) ? r.machineCn : r.machineEn;
 const pick = (en, cn) => (lang === 'zh' && cn) ? cn : en;
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
@@ -443,7 +433,6 @@ function renderTop(rows) {
 
 /* ================== MODEL SUMMARY TAB (Using PreMapped Column) ================== */
 function getPreMappedName(r) {
-  // ดึงค่าจากคอลัมน์ PreMapped ที่จับคู่ไว้แล้ว (ถ้าเปลี่ยนภาษาเป็นจีนและมีข้อมูล ให้ดึงตามที่ต้องการ หรือใช้ค่า PreMapped ตรงๆ)
   return r.preMapped || r.machineRaw || '-';
 }
 
@@ -524,7 +513,7 @@ function renderModelTab(rows) {
     const sub = level === 1 ? `${g.n} ${t('cases')} · ${g.machines.size} ${t('machinesWord') || 'machines'}` : `${esc(g.factory)} · ${g.n} ${t('cases')}`;
     return iss.map((i, idx) => `<tr class="${idx === 0 ? 'grp' : ''}">
       ${idx === 0 ? `<td class="gname" rowspan="${iss.length}">${esc(g.label)}<div class="lbl font-normal">${sub}</div></td>` : ''}
-      <td>${esc(i.label)}</td><td class="cnt">${i.n}</td></tr>`).join('');
+      <td>${esc(i.label)) ? esc(i.label) : ''}</td><td class="cnt">${i.n}</td></tr>`).join('');
   }).join('') || `<tr><td colspan="3" class="text-center lbl">${t('empty')}</td></tr>`;
 }
 
