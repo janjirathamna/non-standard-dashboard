@@ -157,7 +157,7 @@
 <script>
 /* ================== CONFIG ================== */
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxNht563H7COeUnwfF4NUImMsv3bFGoIpiHsE4h1tTrPFemxnskTOBsCw02zQ-ts7G8/exec';
-const APP_VERSION = 'v16-2026-11-03';
+const APP_VERSION = 'v17-2026-11-03';
 const FACTORIES = ['Ayutthaya', 'Terahop 5000', 'Pinewave'];
 const FCOLOR = { 'Ayutthaya': '#2dd4bf', 'Terahop 5000': '#f59e0b', 'Pinewave': '#a78bfa' };
 
@@ -246,6 +246,7 @@ function buildKeywordOptions() {
   const f = $('fFactory').value, rows = DATA.filter(r => !f || r.factory === f), b = new Map(), m = new Map();
   rows.forEach(r => {
     if (r.brandEn) b.set(r.brandEn, (lang === 'zh' && r.brandCn) ? r.brandCn : r.brandEn);
+    // ดึงเฉพาะรุ่นจริงๆ ไม่เอาเลขเครื่อง (1#, 2#)
     if (r.model) m.set(r.model, r.model);
   });
   const fill = (id, allKey, map) => {
@@ -261,6 +262,11 @@ function filtered() {
     const d = (r.timestamp || '').slice(0, 10);
     return (!f || r.factory === f) && (!m || r.machineKey === m) && (!br || r.brandEn === br) && (!mo || r.model === mo) && (!s || d >= s) && (!e || d <= e);
   });
+}
+
+function getPreMappedName(r) {
+  if (lang === 'zh' && r.preMappedCn) return r.preMappedCn;
+  return r.preMapped || r.machineEn || '-';
 }
 
 /* ================== RENDER ================== */
@@ -311,7 +317,12 @@ function chartModel(rows) {
       a.n++; agg.set(key, a);
     });
   } else {
-    rows.forEach(r => { const a = agg.get(r.machineKey) || { key: r.machineKey, label: mName(r), factory: r.factory, n: 0 }; a.n++; agg.set(r.machineKey, a); });
+    rows.forEach(r => { 
+      const labelName = getPreMappedName(r);
+      const k = r.preMapped || r.machineKey;
+      const a = agg.get(k) || { key: k, label: labelName, factory: r.factory, n: 0 }; 
+      a.n++; agg.set(k, a); 
+    });
   }
   const items = [...agg.values()].sort((a, b) => b.n - a.n);
   const machineName = sel && rows.length ? mName(rows[0]) : '';
@@ -338,8 +349,10 @@ function chartConfig(m, pal, live) {
         if (sel || !els.length) return;
         const it = items[els[0].index];
         const first = DATA.find(r => r.machineKey === it.key);
-        $('fFactory').value = first.factory; buildMachineOptions();
-        $('fMachine').value = it.key; render();
+        if (first) {
+          $('fFactory').value = first.factory; buildMachineOptions();
+          $('fMachine').value = it.key; render();
+        }
       }
     } : { responsive: false, animation: false, devicePixelRatio: 2 }),
     plugins: [{ id: 'val', afterDatasetsDraw(c) { const x = c.ctx; x.save(); x.fillStyle = pal.txt; x.font = '600 12px IBM Plex Sans, sans-serif'; x.textBaseline = 'middle';
@@ -441,12 +454,7 @@ function renderTop(rows) {
   $('tblTop').tBodies[0].innerHTML = html || `<tr><td colspan="5" class="text-center lbl">${t('empty')}</td></tr>`;
 }
 
-/* ================== MODEL SUMMARY TAB (Using PreMapped Column with Language Support & Clean Drill-down) ================== */
-function getPreMappedName(r) {
-  if (lang === 'zh' && r.preMappedCn) return r.preMappedCn;
-  return r.preMapped || r.machineRaw || '-';
-}
-
+/* ================== MODEL SUMMARY TAB ================== */
 const modelKeyOf = r => r.preMapped || r.machineRaw || '-';
 let modelNav = { model: null, machine: null };
 let modelChartInst = null;
@@ -466,7 +474,6 @@ function groupRows(rows, keyFn, labelFn) {
 function renderModelTab(rows) {
   const byDesc = (a, b) => b.n - a.n || a.label.localeCompare(b.label);
 
-  // 1. จัดกลุ่มระดับ Model โดยใช้ key เป็นค่ากลาง (preMapped) เพื่อให้คลิกเจาะลึกไม่เพี้ยน
   const models = groupRows(rows, modelKeyOf, getPreMappedName);
   if (modelNav.model && !models.some(g => g.key === modelNav.model)) modelNav = { model: null, machine: null };
   
