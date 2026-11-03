@@ -199,7 +199,17 @@ const t = k => I18N[lang][k] || k;
 /* ================== STATE ================== */
 let DATA = [], chart = null, detailChartInstance = null, generatedAt = null, tab = 'overview';
 const $ = id => document.getElementById(id);
-const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;}[c]));
+const esc = function(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/[&<>"']/g, function(c) {
+    if (c === '&') return '&amp;';
+    if (c === '<') return '&lt;';
+    if (c === '>') return '&gt;';
+    if (c === '"') return '&quot;';
+    if (c === "'") return '&#39;';
+    return c;
+  });
+};
 const mName = r => (lang === 'zh' && r.machineCn) ? r.machineCn : r.machineEn;
 const pick = (en, cn) => (lang === 'zh' && cn) ? cn : en;
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
