@@ -28,6 +28,9 @@
   #tblTop tr.grp td{border-top:2px solid var(--muted)}   /* divider where a new machine starts */
   #tblTop tr.alt{background:color-mix(in srgb,var(--panel2) 55%,transparent)}   /* every other machine is tinted */
   .scroll{max-height:70vh;overflow:auto}
+  #tblModel tr.grp td{border-top:2px solid var(--muted)}
+  #tblModel td.gname{font-weight:600;background:var(--panel2);vertical-align:top;width:28%}
+  #tblModel td.cnt{text-align:right;font-weight:700;width:90px}
   .lbl{font-size:11px;color:var(--muted)}
   .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
   #report{display:none}
@@ -79,10 +82,13 @@
     <nav class="flex gap-1 mr-auto">
       <button class="tab on" data-tab="overview" data-i18n="tabOverview"></button>
       <button class="tab" data-tab="top" data-i18n="tabTop"></button>
+      <button class="tab" data-tab="model" data-i18n="tabModel"></button>
       <button class="tab" data-tab="log" data-i18n="tabLog"></button>
     </nav>
     <select id="fFactory" aria-label="Factory"></select>
-    <select id="fMachine" aria-label="Machine" class="max-w-[190px]"></select>
+    <select id="fMachine" aria-label="Machine" style="display:none"></select>   <!-- hidden: only holds the machine picked by clicking a bar -->
+    <select id="fBrand" aria-label="Brand" class="max-w-[130px]"></select>
+    <select id="fModel" aria-label="Model" class="max-w-[120px]"></select>
     <input type="date" id="fStart" aria-label="Start">
     <span class="lbl">–</span>
     <input type="date" id="fEnd" aria-label="End">
@@ -115,6 +121,23 @@
     </div>
   </section>
 
+  <section class="view panel p-3 hidden" data-view="model">
+    <div class="flex items-center gap-2 flex-wrap mb-2">
+      <button id="mBack" class="btn" style="display:none"></button>
+      <div id="modelCrumb" class="flex items-center gap-1 flex-wrap text-xs"></div>
+    </div>
+    <div class="font-semibold" id="modelChartTitle"></div>
+    <div class="lbl mb-1" id="modelHint"></div>
+    <div id="modelChartWrap" class="relative w-full mb-3"><canvas id="modelChart"></canvas></div>
+    <p class="lbl mb-2" id="modelNote"></p>
+    <div class="scroll">
+      <table class="w-full" id="tblModel">
+        <thead><tr><th id="thModel"></th><th data-i18n="issue"></th><th class="text-right" data-i18n="times"></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
   <section class="view panel p-3 hidden" data-view="log">
     <div class="flex items-center justify-between mb-2">
       <div class="font-semibold" data-i18n="logTitle"></div><span id="logCount" class="lbl"></span>
@@ -136,7 +159,8 @@
 /* ================== CONFIG ================== */
 // Paste your deployed Web App URL (…/exec). Leave empty to preview with demo data.
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxNht563H7COeUnwfF4NUImMsv3bFGoIpiHsE4h1tTrPFemxnskTOBsCw02zQ-ts7G8/exec';
-const APP_VERSION = 'v7-2026-11-02';   // shown under the title so you can tell which file is live
+const APP_VERSION = 'v12-2026-11-03';
+const MODEL_SORT_ASC = false;   // Model Summary tab: true = fewest -> most (as in the spec). false = most -> fewest   // shown under the title so you can tell which file is live
 const FACTORIES = ['Ayutthaya', 'Terahop 5000', 'Pinewave'];
 const FCOLOR = { 'Ayutthaya': '#2dd4bf', 'Terahop 5000': '#f59e0b', 'Pinewave': '#a78bfa' };
 
@@ -144,14 +168,14 @@ const FCOLOR = { 'Ayutthaya': '#2dd4bf', 'Terahop 5000': '#f59e0b', 'Pinewave': 
 const I18N = {
   en: { title:'Non-Standard Problem Report', addData:'＋ Add Data', factory:'Factory', machine:'Machine', reset:'Reset',
     all:'All factories', allM:'All machines', cases:'cases', chartTitle:'Issues per machine',
-    tabOverview:'Overview', repTitle:'Non-Standard Problem Report', repLog:'Issue log', rec:'Recurring issues (2+ times)', one:'One-off issues', generated:'Generated', nRec:'Recurring issue types', nOne:'One-off issues', dateRange:'Date', back:'← All machines', rankCol:'Rank', chartMachine:'Issues on', hintAll:'Click a bar to see the issues of that machine.', tabTop:'Top 3 Recurring', tabLog:'Issue Log',
+    tabOverview:'Overview', tabModel:'Model Summary', mAll:'All models', mBack:'← Back', mChart1:'Issues per model', mChart2:'Recurring issues in', mNoRec:'No issue occurred 2+ times in this model.', mChart3:'Issues on', mHint1:'Click a bar to see which issues keep repeating in that model.', mHint2:'Chart: issues that occurred 2+ times. Table: every issue, split by machine.', colMachine:'Machine', brand:'Brand', model:'Model', allB:'All brands', allMod:'All models', modelTitle:'Issues grouped by Brand + Model', modelNote:'All machines with the same brand and model are combined.', machinesWord:'machines', modelSortAsc:'Sorted ascending: fewest → most', modelSortDesc:'Sorted descending: most → fewest', repTitle:'Non-Standard Problem Report', repLog:'Issue log', rec:'Recurring issues (2+ times)', one:'One-off issues', generated:'Generated', nRec:'Recurring issue types', nOne:'One-off issues', dateRange:'Date', back:'← All machines', rankCol:'Rank', chartMachine:'Issues on', hintAll:'Click a bar to see the issues of that machine.', tabTop:'Top 3 Recurring', tabLog:'Issue Log',
     topTitle:'Top 3 most recurring issues per machine', topNote:'Rank 1 = most frequent. Only issues that occurred 2+ times are listed; tied issues share the same rank.',
     issue:'Issue', times:'Times', logTitle:'Full issue log', time:'Time', solution:'Solution',
     loading:'Loading data…', demo:'Demo data shown. Set GAS_URL in index.html to load your sheets.',
     error:'Could not load data: ', empty:'No records match the current filters.', updated:'Updated', total:'Total' },
   zh: { title:'非标准问题报告', addData:'＋ 添加数据', factory:'工厂', machine:'机器', reset:'重置',
     all:'全部工厂', allM:'全部机器', cases:'起', chartTitle:'各机器问题统计',
-    tabOverview:'概览', repTitle:'非标准问题报告', repLog:'问题记录', rec:'重复发生的问题（2次及以上）', one:'仅发生一次的问题', generated:'生成时间', nRec:'重复问题种类', nOne:'单次问题', dateRange:'日期', back:'← 全部机器', rankCol:'名次', chartMachine:'问题统计：', hintAll:'点击柱子可查看该机器的问题。', tabTop:'重复问题前3', tabLog:'问题记录',
+    tabOverview:'概览', tabModel:'机型排行', mAll:'全部机型', mBack:'← 返回', mChart1:'各机型问题数', mChart2:'重复问题：', mNoRec:'该机型没有发生2次及以上的问题。', mChart3:'问题统计：', mHint1:'点击柱子查看该机型的重复问题。', mHint2:'图表：发生2次及以上的问题。表格：全部问题，按机器分开。', colMachine:'机器', brand:'品牌', model:'机型', allB:'全部品牌', allMod:'全部机型', modelTitle:'按品牌 + 机型汇总的问题', modelNote:'相同品牌和机型的所有机器合并统计。', machinesWord:'台机器', modelSortAsc:'升序排列：由少到多', modelSortDesc:'降序排列：由多到少', repTitle:'非标准问题报告', repLog:'问题记录', rec:'重复发生的问题（2次及以上）', one:'仅发生一次的问题', generated:'生成时间', nRec:'重复问题种类', nOne:'单次问题', dateRange:'日期', back:'← 全部机器', rankCol:'名次', chartMachine:'问题统计：', hintAll:'点击柱子可查看该机器的问题。', tabTop:'重复问题前3', tabLog:'问题记录',
     topTitle:'各机器重复发生最多的前3大问题', topNote:'名次1 = 发生最多。仅列出发生2次及以上的问题，并列的问题名次相同。',
     issue:'问题', times:'次数', logTitle:'完整问题记录', time:'时间', solution:'解决方法',
     loading:'数据加载中…', demo:'当前为演示数据。请在 index.html 中设置 GAS_URL 以加载表格数据。',
@@ -195,12 +219,26 @@ function buildMachineOptions() {
   const opts = [...seen.entries()].sort((a, b) => a[1].localeCompare(b[1]));
   $('fMachine').innerHTML = `<option value="">${t('allM')}</option>` + opts.map(([k, n]) => `<option value="${esc(k)}">${esc(n)}</option>`).join('');
   $('fMachine').value = seen.has(cur) ? cur : '';
+  buildKeywordOptions();
+}
+function buildKeywordOptions() {                     // brand / model lists come from the keyword sheet match
+  const f = $('fFactory').value, rows = DATA.filter(r => !f || r.factory === f), b = new Map(), m = new Map();
+  rows.forEach(r => {
+    if (r.brandEn) b.set(r.brandEn, (lang === 'zh' && r.brandCn) ? r.brandCn : r.brandEn);
+    if (r.model) m.set(r.model, r.model);
+  });
+  const fill = (id, allKey, map) => {
+    const cur = $(id).value, opts = [...map.entries()].sort((x, y) => x[1].localeCompare(y[1], undefined, { numeric: true }));
+    $(id).innerHTML = `<option value="">${t(allKey)}</option>` + opts.map(([k, n]) => `<option value="${esc(k)}">${esc(n)}</option>`).join('');
+    $(id).value = map.has(cur) ? cur : '';
+  };
+  fill('fBrand', 'allB', b); fill('fModel', 'allMod', m);
 }
 function filtered() {
-  const f = $('fFactory').value, m = $('fMachine').value, s = $('fStart').value, e = $('fEnd').value;
+  const f = $('fFactory').value, m = $('fMachine').value, br = $('fBrand').value, mo = $('fModel').value, s = $('fStart').value, e = $('fEnd').value;
   return DATA.filter(r => {
     const d = (r.timestamp || '').slice(0, 10);
-    return (!f || r.factory === f) && (!m || r.machineKey === m) && (!s || d >= s) && (!e || d <= e);
+    return (!f || r.factory === f) && (!m || r.machineKey === m) && (!br || r.brandEn === br) && (!mo || r.model === mo) && (!s || d >= s) && (!e || d <= e);
   });
 }
 
@@ -208,7 +246,7 @@ function filtered() {
 function render() {
   applyChrome();
   const rows = filtered();
-  renderCards(rows); renderChart(rows); renderTop(rows); renderLog(rows);
+  renderCards(rows); renderChart(rows); renderTop(rows); renderModelTab(rows); renderLog(rows);
 }
 function applyChrome() {
   document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
@@ -221,6 +259,10 @@ function applyChrome() {
   $('updated').textContent = (generatedAt ? `${t('updated')}: ${new Date(generatedAt).toLocaleString(lang === 'zh' ? 'zh-CN' : 'en-GB')}` : '') + ' · ' + APP_VERSION;
   $('fFactory').options[0].textContent = t('all');
   $('fMachine').options[0].textContent = t('allM');
+  $('fBrand').options[0].textContent = t('allB');
+  $('fModel').options[0].textContent = t('allMod');
+  $('thModel').textContent = t('brand') + ' + ' + t('model');
+  $('modelNote').textContent = t('modelNote') + '  ·  ' + t(MODEL_SORT_ASC ? 'modelSortAsc' : 'modelSortDesc');
 }
 
 function renderCards(rows) {
@@ -325,7 +367,7 @@ function buildReport() {
 
   const f = $('fFactory').value, mk = $('fMachine').value, s = $('fStart').value, e = $('fEnd').value;
   const mLabel = mk ? mName(rows[0] || { machineEn: '', machineCn: '' }) : t('allM');
-  const filt = [`${t('factory')}: ${f || t('all')}`, `${t('machine')}: ${mLabel}`, `${t('dateRange')}: ${s || '…'} – ${e || '…'}`].join('  |  ');
+  const filt = [`${t('factory')}: ${f || t('all')}`, `${t('machine')}: ${mLabel}`, `${t('brand')}: ${$('fBrand').selectedOptions[0].textContent}`, `${t('model')}: ${$('fModel').selectedOptions[0].textContent}`, `${t('dateRange')}: ${s || '…'} – ${e || '…'}`].join('  |  ');
 
   const sub = v => (lang === 'zh' && v) ? `<div class="sub">${esc(v)}</div>` : '';
   const tr = r => `<tr><td style="white-space:nowrap">${esc((r.timestamp || '').replace('T', ' ').slice(0, 16))}</td>
@@ -380,6 +422,86 @@ function renderTop(rows) {
   $('tblTop').tBodies[0].innerHTML = html || `<tr><td colspan="5" class="text-center lbl">${t('empty')}</td></tr>`;
 }
 
+// model = one row of the keyword sheet; its English / Chinese name (last two columns) is what we display
+const modelKeyOf = r => r.modelNameEn || ('raw|' + (r.machineRaw || ''));
+const modelLabel = r => (lang === 'zh' && r.modelNameCn) ? r.modelNameCn : (r.modelNameEn || r.machineRaw || '-');
+let modelNav = { model: null };                      // null = all models; otherwise the model whose issues are shown
+let modelChartInst = null;
+
+function groupRows(rows, keyFn, labelFn) {
+  const map = new Map();
+  rows.forEach(r => {
+    const k = keyFn(r);
+    const g = map.get(k) || { key: k, label: labelFn(r), factory: r.factory, n: 0, machines: new Set(), issues: new Map() };
+    g.n++; g.machines.add(r.machineKey);
+    const ik = r.issueEn || r.issueRaw || '-', i = g.issues.get(ik) || { label: pick(ik, r.issueCn), n: 0 };
+    i.n++; g.issues.set(ik, i); map.set(k, g);
+  });
+  return [...map.values()];
+}
+
+function renderModelTab(rows) {
+  const dir = MODEL_SORT_ASC ? 1 : -1, by = (a, b) => dir * (a.n - b.n) || a.label.localeCompare(b.label);
+  const models = groupRows(rows, modelKeyOf, modelLabel);          // all machines of a model are added together
+  if (modelNav.model && !models.some(g => g.key === modelNav.model)) modelNav = { model: null };
+  const level = modelNav.model ? 2 : 1;
+  const modelG = level === 2 ? models.find(g => g.key === modelNav.model) : null;
+  const scope = level === 2 ? rows.filter(r => modelKeyOf(r) === modelNav.model) : rows;
+
+  // chart items
+  let items, groups;
+  if (level === 1) {                                 // level 1: cases per model
+    groups = models.sort(by);
+    items = groups.map(g => ({ key: g.key, label: g.label, n: g.n }));
+  } else {                                           // level 2: only issues that repeat (2+ times) in this model
+    groups = groupRows(scope, r => r.machineKey, mName).sort(by);          // table: every issue, one block per machine
+    items = [...modelG.issues.values()].filter(i => i.n >= 2).sort(by).map(i => ({ label: i.label, n: i.n }));
+  }
+
+  // header
+  $('mBack').textContent = t('mBack'); $('mBack').style.display = level > 1 ? '' : 'none';
+  $('modelCrumb').innerHTML = `<button class="btn" data-nav="root">${esc(t('mAll'))}</button>` +
+    (modelG ? `<span class="lbl">›</span><span class="font-semibold px-1">${esc(modelG.label)}</span>` : '');
+  $('modelChartTitle').textContent = level === 1 ? t('mChart1') : `${t('mChart2')} ${modelG.label}`;
+  $('modelHint').textContent = level === 1 ? t('mHint1') : (items.length ? t('mHint2') : t('mNoRec') + '  ' + t('mHint2'));
+  $('thModel').textContent = level === 1 ? t('model') : t('colMachine');
+
+  // chart
+  if (modelChartInst) { modelChartInst.destroy(); modelChartInst = null; }
+  const issueLvl = level === 2;
+  $('modelChartWrap').style.display = items.length ? '' : 'none';
+  if (items.length) {
+    $('modelChartWrap').style.height = Math.max(220, issueLvl
+      ? items.reduce((sum, i) => sum + Math.max(32, wrap(i.label, 46).length * 15 + 14), 0) + 70 : items.length * 34 + 70) + 'px';
+    const txt = css('--text'), grid = css('--line'), maxN = Math.max(...items.map(i => i.n)), color = css('--accent');
+    modelChartInst = new Chart($('modelChart'), {
+      type: 'bar',
+      data: { labels: items.map(i => issueLvl ? wrap(i.label, 46) : i.label),
+        datasets: [{ label: t('cases'), data: items.map(i => i.n), backgroundColor: color, borderRadius: 4, barThickness: 22 }] },
+      options: {
+        indexAxis: 'y', responsive: true, maintainAspectRatio: false, color: txt,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { title: c => items[c[0].dataIndex].label } } },
+        scales: { x: { beginAtZero: true, suggestedMax: Math.max(6, maxN + 1), ticks: { precision: 0, color: txt }, grid: { color: grid } },
+                  y: { ticks: { autoSkip: false, color: txt }, grid: { display: false } } },
+        onHover: (e, els) => { e.native.target.style.cursor = (level === 1 && els.length) ? 'pointer' : 'default'; },
+        onClick: (e, els) => { if (level !== 1 || !els.length) return; modelNav = { model: items[els[0].index].key }; renderModelTab(filtered()); }
+      },
+      plugins: [{ id: 'val', afterDatasetsDraw(c) { const x = c.ctx; x.save(); x.fillStyle = txt; x.font = '600 12px IBM Plex Sans, sans-serif'; x.textBaseline = 'middle';
+          c.getDatasetMeta(0).data.forEach((bar, i) => x.fillText(items[i].n, bar.x + 6, bar.y)); x.restore(); } },
+        { id: 'bg', beforeDraw(c) { const x = c.ctx; x.save(); x.globalCompositeOperation = 'destination-over'; x.fillStyle = css('--panel'); x.fillRect(0, 0, c.width, c.height); x.restore(); } }]
+    });
+  }
+
+  // summary table under the chart: groups separated by a thick solid line
+  $('tblModel').tBodies[0].innerHTML = groups.map(g => {
+    const iss = [...g.issues.values()].sort(by);
+    const sub = level === 1 ? `${g.n} ${t('cases')} · ${g.machines.size} ${t('machinesWord')}` : `${esc(g.factory)} · ${g.n} ${t('cases')}`;
+    return iss.map((i, idx) => `<tr class="${idx === 0 ? 'grp' : ''}">
+      ${idx === 0 ? `<td class="gname" rowspan="${iss.length}">${esc(g.label)}<div class="lbl font-normal">${sub}</div></td>` : ''}
+      <td>${esc(i.label)}</td><td class="cnt">${i.n}</td></tr>`).join('');
+  }).join('') || `<tr><td colspan="3" class="text-center lbl">${t('empty')}</td></tr>`;
+}
+
 function renderLog(rows) {
   $('logCount').textContent = `${rows.length} ${t('cases')}`;
   const sub = v => (lang === 'zh' && v) ? `<div class="lbl">${esc(v)}</div>` : '';
@@ -400,10 +522,10 @@ function exportPNG() {
   a.download = 'issue-chart-' + new Date().toISOString().slice(0, 10) + '.png'; a.click();
 }
 function exportCSV() {
-  const head = ['Time','Factory','Machine (EN)','Machine (CN)','Issue (EN)','Issue (CN)','Solution (EN)','Solution (CN)','Category'];
+  const head = ['Time','Factory','Machine (EN)','Machine (CN)','Model name (EN)','Model name (CN)','Brand (EN)','Function (EN)','Model','Issue (EN)','Issue (CN)','Solution (EN)','Solution (CN)','Category'];
   const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
   const lines = [head.map(q).join(',')].concat(filtered().map(r =>
-    [r.timestamp, r.factory, r.machineEn, r.machineCn, r.issueEn, r.issueCn, r.solutionEn, r.solutionCn, r.category].map(q).join(',')));
+    [r.timestamp, r.factory, r.machineEn, r.machineCn, r.modelNameEn, r.modelNameCn, r.brandEn, r.functionEn, r.model, r.issueEn, r.issueCn, r.solutionEn, r.solutionCn, r.category].map(q).join(',')));
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob(['\uFEFF' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' }));
   a.download = 'issue-log-' + new Date().toISOString().slice(0, 10) + '.csv'; a.click(); URL.revokeObjectURL(a.href);
@@ -413,18 +535,20 @@ function exportCSV() {
 $('btn-en').onclick = () => { lang = 'en'; localStorage.setItem('lang', lang); buildMachineOptions(); render(); };
 $('btn-zh').onclick = () => { lang = 'zh'; localStorage.setItem('lang', lang); buildMachineOptions(); render(); };
 $('btnTheme').onclick = () => { theme = theme === 'dark' ? 'light' : 'dark'; localStorage.setItem('theme', theme); render(); };
-document.querySelectorAll('.tab').forEach(b => b.onclick = () => { tab = b.dataset.tab; render(); });
+document.querySelectorAll('.tab').forEach(b => b.onclick = () => { tab = b.dataset.tab; render(); if (tab === 'model' && modelChartInst) modelChartInst.resize(); });
 $('fFactory').onchange = () => { buildMachineOptions(); render(); };
-['fMachine', 'fStart', 'fEnd'].forEach(id => $(id).onchange = render);
-$('btnReset').onclick = () => { ['fFactory', 'fMachine', 'fStart', 'fEnd'].forEach(id => $(id).value = ''); buildMachineOptions(); render(); };
+['fMachine', 'fBrand', 'fModel', 'fStart', 'fEnd'].forEach(id => $(id).onchange = render);
+$('btnReset').onclick = () => { modelNav = { model: null }; ['fFactory', 'fMachine', 'fBrand', 'fModel', 'fStart', 'fEnd'].forEach(id => $(id).value = ''); buildMachineOptions(); render(); };
 $('btnBack').onclick = () => { $('fMachine').value = ''; render(); };
+$('mBack').onclick = () => { modelNav = { model: null }; renderModelTab(filtered()); };
+$('modelCrumb').onclick = e => { if (e.target.closest('[data-nav]')) { modelNav = { model: null }; renderModelTab(filtered()); } };
 $('btnPng').onclick = exportPNG;
 $('btnCsv').onclick = exportCSV;
 $('btnPrint').onclick = () => buildReport().then(() => window.print());
 window.addEventListener('beforeprint', () => { buildReport(); });   // Ctrl+P gets the same report
 
 /* ================== DEMO DATA (used only when GAS_URL is empty) ================== */
-function demoData() {
+function demoBase() {
   const mk = (f, d, raw, no, cn, ie, ic, se, sc) => ({ id: Math.random(), factory: f, timestamp: d, machineRaw: raw, machineNo: no,
     machineKey: f + '|' + raw.toLowerCase() + '|' + no.replace(/\D/g, ''), machineEn: raw + ' ' + no, machineCn: cn,
     issueRaw: ie, issueEn: ie, issueCn: ic, solutionRaw: se, solutionEn: se, solutionCn: sc, category: '' });
@@ -440,6 +564,18 @@ function demoData() {
     mk('Pinewave', '2026-10-30T07:45:00', 'ISO-LQ-(1.0)', '1#', '猎奇1.0 1# 隔离器', ...p),
     mk('Pinewave', '2026-10-30T09:10:00', 'ISO-LQ-(1.0)', '1#', '猎奇1.0 1# 隔离器', ...v)
   ];
+}
+const DEMO_KW = {
+  'ISO-LQ-(1.0)': { brandEn: 'LQ', brandCn: '猎奇', functionEn: 'ISO', functionCn: '隔离器', model: '1.0', modelNameEn: 'LQ 1.0 ISO', modelNameCn: '猎奇 1.0 隔离器' },
+  'ISO-ENG-(2.0)': { brandEn: 'ENG', brandCn: 'ENG恩纳基', functionEn: 'ISO', functionCn: '隔离器', model: '2.0', modelNameEn: 'ENG 2.0 ISO', modelNameCn: 'ENG恩纳基 2.0 隔离器' },
+  'Pad Mounting-ENG-(2.0)': { brandEn: 'ENG', brandCn: 'ENG恩纳基', functionEn: 'Pad Mounting', functionCn: 'Pad Mounting', model: '2.0', modelNameEn: 'ENG 2.0 Pad Mounting', modelNameCn: 'ENG恩纳基 2.0 Pad Mounting' },
+  'BOSA-Axxon': { brandEn: 'Axxon', brandCn: 'AXXON', functionEn: 'BOSA', functionCn: 'BOSA', model: '', modelNameEn: 'Axxon BOSA', modelNameCn: 'AXXON BOSA' }
+};
+function demoData() {
+  const base = demoBase();
+  const more = base.filter(r => r.machineRaw === 'ISO-LQ-(1.0)').map(r => Object.assign({}, r, {   // a second machine of the same model
+    machineNo: '2#', machineKey: r.machineKey.replace(/\|\d+$/, '|2'), machineEn: r.machineEn.replace('1#', '2#'), machineCn: r.machineCn.replace('1#', '2#') }));
+  return base.concat(more).map(r => Object.assign(r, DEMO_KW[r.machineRaw] || {}));
 }
 load();
 </script>
