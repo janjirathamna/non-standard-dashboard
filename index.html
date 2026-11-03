@@ -27,7 +27,7 @@
   tbody tr:hover{background:var(--panel2)}
   #tblTop tr.grp td{border-top:2px solid var(--muted)}   /* divider where a new machine starts */
   #tblTop tr.alt{background:color-mix(in srgb,var(--panel2) 55%,transparent)}   /* every other machine is tinted */
-  .scroll{max-height:70vh;overflow:auto}
+  .scroll{overflow-x:auto}                      /* no height cap: the whole page scrolls instead of a small box */
   #tblModel tr.grp td{border-top:2px solid var(--muted)}
   #tblModel td.gname{font-weight:600;background:var(--panel2);vertical-align:top;width:28%}
   #tblModel td.cnt{text-align:right;font-weight:700;width:90px}
@@ -159,7 +159,7 @@
 /* ================== CONFIG ================== */
 // Paste your deployed Web App URL (…/exec). Leave empty to preview with demo data.
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxNht563H7COeUnwfF4NUImMsv3bFGoIpiHsE4h1tTrPFemxnskTOBsCw02zQ-ts7G8/exec';
-const APP_VERSION = 'v14-2026-11-03';
+const APP_VERSION = 'v15-2026-11-03';
 const MODEL_SORT_ASC = false;   // Model Summary tab: true = fewest -> most (as in the spec). false = most -> fewest   // shown under the title so you can tell which file is live
 const FACTORIES = ['Ayutthaya', 'Terahop 5000', 'Pinewave'];
 const FCOLOR = { 'Ayutthaya': '#2dd4bf', 'Terahop 5000': '#f59e0b', 'Pinewave': '#a78bfa' };
