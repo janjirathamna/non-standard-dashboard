@@ -157,7 +157,7 @@
 <script>
 /* ================== CONFIG ================== */
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxNht563H7COeUnwfF4NUImMsv3bFGoIpiHsE4h1tTrPFemxnskTOBsCw02zQ-ts7G8/exec';
-const APP_VERSION = 'v15-2026-11-03';
+const APP_VERSION = 'v16-2026-11-03';
 const FACTORIES = ['Ayutthaya', 'Terahop 5000', 'Pinewave'];
 const FCOLOR = { 'Ayutthaya': '#2dd4bf', 'Terahop 5000': '#f59e0b', 'Pinewave': '#a78bfa' };
 
@@ -441,12 +441,14 @@ function renderTop(rows) {
   $('tblTop').tBodies[0].innerHTML = html || `<tr><td colspan="5" class="text-center lbl">${t('empty')}</td></tr>`;
 }
 
-/* ================== MODEL SUMMARY TAB (Using PreMapped Column) ================== */
+/* ================== MODEL SUMMARY TAB (Using PreMapped Column with Language Support & Clean Drill-down) ================== */
 function getPreMappedName(r) {
+  // รองรับการแสดงผลทั้งภาษาไทย/อังกฤษ และภาษาจีนตามการตั้งค่าภาษา
+  if (lang === 'zh' && r.preMappedCn) return r.preMappedCn;
   return r.preMapped || r.machineRaw || '-';
 }
 
-const modelKeyOf = r => getPreMappedName(r);
+const modelKeyOf = r => r.preMapped || r.machineRaw || '-';
 let modelNav = { model: null, machine: null };
 let modelChartInst = null;
 
@@ -465,12 +467,15 @@ function groupRows(rows, keyFn, labelFn) {
 function renderModelTab(rows) {
   const byDesc = (a, b) => b.n - a.n || a.label.localeCompare(b.label);
 
+  // 1. จัดกลุ่มระดับ Model โดยใช้ key เป็นค่ากลาง (preMapped) เพื่อให้คลิกเจาะลึกไม่เพี้ยน
   const models = groupRows(rows, modelKeyOf, getPreMappedName);
   if (modelNav.model && !models.some(g => g.key === modelNav.model)) modelNav = { model: null, machine: null };
+  
   let scope = modelNav.model ? rows.filter(r => modelKeyOf(r) === modelNav.model) : rows;
   const machines = modelNav.model ? groupRows(scope, r => r.machineKey, mName) : [];
   if (modelNav.machine && !machines.some(g => g.key === modelNav.machine)) modelNav.machine = null;
   if (modelNav.machine) scope = scope.filter(r => r.machineKey === modelNav.machine);
+  
   const level = modelNav.machine ? 3 : modelNav.model ? 2 : 1;
   const modelG = modelNav.model ? models.find(g => g.key === modelNav.model) : null;
   const machineG = modelNav.machine ? machines.find(g => g.key === modelNav.machine) : null;
@@ -520,7 +525,7 @@ function renderModelTab(rows) {
 
   $('tblModel').tBodies[0].innerHTML = groups.map(g => {
     const iss = [...g.issues.values()].sort(byDesc);
-    const sub = level === 1 ? `${g.n} ${t('cases')} · ${g.machines.size} ${t('machinesWord') || 'machines'}` : `${esc(g.factory)} · ${g.n} ${t('cases')}`;
+    const sub = level === 1 ? `${g.n} ${t('cases')} · ${g.machines.size} machines` : `${esc(g.factory)} · ${g.n} ${t('cases')}`;
     return iss.map((i, idx) => `<tr class="${idx === 0 ? 'grp' : ''}">
       ${idx === 0 ? `<td class="gname" rowspan="${iss.length}">${esc(g.label)}<div class="lbl font-normal">${sub}</div></td>` : ''}
       <td>${esc(i.label)}</td><td class="cnt">${i.n}</td></tr>`).join('');
