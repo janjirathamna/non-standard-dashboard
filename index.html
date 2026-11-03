@@ -158,9 +158,9 @@
 <script>
 /* ================== CONFIG ================== */
 // Paste your deployed Web App URL (…/exec). Leave empty to preview with demo data.
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxNht563H7COeUnwfF4NUImMsv3bFGoIpiHsE4h1tTrPFemxnskTOBsCw02zQ-ts7G8/exec';
-const APP_VERSION = 'v12-2026-11-03';
-const MODEL_SORT_ASC = false;   // Model Summary tab: true = fewest -> most (as in the spec). false = most -> fewest   // shown under the title so you can tell which file is live
+const GAS_URL = '';
+const APP_VERSION = 'v13-2026-11-03';
+const MODEL_SORT_ASC = true;   // Model Summary tab: true = fewest -> most (as in the spec). false = most -> fewest   // shown under the title so you can tell which file is live
 const FACTORIES = ['Ayutthaya', 'Terahop 5000', 'Pinewave'];
 const FCOLOR = { 'Ayutthaya': '#2dd4bf', 'Terahop 5000': '#f59e0b', 'Pinewave': '#a78bfa' };
 
@@ -432,10 +432,10 @@ function groupRows(rows, keyFn, labelFn) {
   const map = new Map();
   rows.forEach(r => {
     const k = keyFn(r);
-    const g = map.get(k) || { key: k, label: labelFn(r), factory: r.factory, n: 0, machines: new Set(), issues: new Map() };
-    g.n++; g.machines.add(r.machineKey);
-    const ik = r.issueEn || r.issueRaw || '-', i = g.issues.get(ik) || { label: pick(ik, r.issueCn), n: 0 };
-    i.n++; g.issues.set(ik, i); map.set(k, g);
+    const g = map.get(k) || { key: k, label: labelFn(r), factory: r.factory, n: 0, byF: {}, machines: new Set(), issues: new Map() };
+    g.n++; g.byF[r.factory] = (g.byF[r.factory] || 0) + 1; g.machines.add(r.machineKey);
+    const ik = r.issueEn || r.issueRaw || '-', i = g.issues.get(ik) || { label: pick(ik, r.issueCn), n: 0, byF: {} };
+    i.n++; i.byF[r.factory] = (i.byF[r.factory] || 0) + 1; g.issues.set(ik, i); map.set(k, g);
   });
   return [...map.values()];
 }
@@ -452,10 +452,10 @@ function renderModelTab(rows) {
   let items, groups;
   if (level === 1) {                                 // level 1: cases per model
     groups = models.sort(by);
-    items = groups.map(g => ({ key: g.key, label: g.label, n: g.n }));
+    items = groups.map(g => ({ key: g.key, label: g.label, n: g.n, byF: g.byF }));
   } else {                                           // level 2: only issues that repeat (2+ times) in this model
     groups = groupRows(scope, r => r.machineKey, mName).sort(by);          // table: every issue, one block per machine
-    items = [...modelG.issues.values()].filter(i => i.n >= 2).sort(by).map(i => ({ label: i.label, n: i.n }));
+    items = [...modelG.issues.values()].filter(i => i.n >= 2).sort(by).map(i => ({ label: i.label, n: i.n, byF: i.byF }));
   }
 
   // header
@@ -473,21 +473,35 @@ function renderModelTab(rows) {
   if (items.length) {
     $('modelChartWrap').style.height = Math.max(220, issueLvl
       ? items.reduce((sum, i) => sum + Math.max(32, wrap(i.label, 46).length * 15 + 14), 0) + 70 : items.length * 34 + 70) + 'px';
-    const txt = css('--text'), grid = css('--line'), maxN = Math.max(...items.map(i => i.n)), color = css('--accent');
+    const txt = css('--text'), grid = css('--line'), maxN = Math.max(...items.map(i => i.n));
+    const facs = FACTORIES.filter(f => items.some(i => i.byF[f]));        // only factories that actually have cases
     modelChartInst = new Chart($('modelChart'), {
       type: 'bar',
       data: { labels: items.map(i => issueLvl ? wrap(i.label, 46) : i.label),
-        datasets: [{ label: t('cases'), data: items.map(i => i.n), backgroundColor: color, borderRadius: 4, barThickness: 22 }] },
+        datasets: facs.map(f => ({ label: f, data: items.map(i => i.byF[f] || 0), backgroundColor: FCOLOR[f], barThickness: 22, stack: 'cases' })) },
       options: {
         indexAxis: 'y', responsive: true, maintainAspectRatio: false, color: txt,
-        plugins: { legend: { display: false }, tooltip: { callbacks: { title: c => items[c[0].dataIndex].label } } },
-        scales: { x: { beginAtZero: true, suggestedMax: Math.max(6, maxN + 1), ticks: { precision: 0, color: txt }, grid: { color: grid } },
-                  y: { ticks: { autoSkip: false, color: txt }, grid: { display: false } } },
+        plugins: { legend: { display: true, position: 'top', labels: { color: txt, boxWidth: 12, boxHeight: 12 } },
+          tooltip: { callbacks: { title: c => items[c[0].dataIndex].label, afterBody: c => t('total') + ': ' + items[c[0].dataIndex].n } } },
+        scales: { x: { stacked: true, beginAtZero: true, suggestedMax: Math.max(6, maxN + 1), ticks: { precision: 0, color: txt }, grid: { color: grid } },
+                  y: { stacked: true, ticks: { autoSkip: false, color: txt }, grid: { display: false } } },
         onHover: (e, els) => { e.native.target.style.cursor = (level === 1 && els.length) ? 'pointer' : 'default'; },
         onClick: (e, els) => { if (level !== 1 || !els.length) return; modelNav = { model: items[els[0].index].key }; renderModelTab(filtered()); }
       },
-      plugins: [{ id: 'val', afterDatasetsDraw(c) { const x = c.ctx; x.save(); x.fillStyle = txt; x.font = '600 12px IBM Plex Sans, sans-serif'; x.textBaseline = 'middle';
-          c.getDatasetMeta(0).data.forEach((bar, i) => x.fillText(items[i].n, bar.x + 6, bar.y)); x.restore(); } },
+      plugins: [{ id: 'val', afterDatasetsDraw(c) {
+          const x = c.ctx; x.save(); x.textBaseline = 'middle';
+          items.forEach((it, i) => {
+            let endX = 0, y = 0;
+            c.data.datasets.forEach((ds, di) => {
+              const v = ds.data[i]; if (!v) return;
+              const bar = c.getDatasetMeta(di).data[i]; y = bar.y; endX = Math.max(endX, bar.x);
+              if (Math.abs(bar.x - bar.base) >= 16) {                      // count of this factory, inside its segment
+                x.fillStyle = '#0b1320'; x.font = '600 11px IBM Plex Sans, sans-serif'; x.textAlign = 'center'; x.fillText(v, (bar.x + bar.base) / 2, bar.y);
+              }
+            });
+            x.fillStyle = txt; x.font = '700 12px IBM Plex Sans, sans-serif'; x.textAlign = 'left'; x.fillText(it.n, endX + 6, y);   // total
+          });
+          x.restore(); } },
         { id: 'bg', beforeDraw(c) { const x = c.ctx; x.save(); x.globalCompositeOperation = 'destination-over'; x.fillStyle = css('--panel'); x.fillRect(0, 0, c.width, c.height); x.restore(); } }]
     });
   }
@@ -495,7 +509,8 @@ function renderModelTab(rows) {
   // summary table under the chart: groups separated by a thick solid line
   $('tblModel').tBodies[0].innerHTML = groups.map(g => {
     const iss = [...g.issues.values()].sort(by);
-    const sub = level === 1 ? `${g.n} ${t('cases')} · ${g.machines.size} ${t('machinesWord')}` : `${esc(g.factory)} · ${g.n} ${t('cases')}`;
+    const sub = (level === 1 ? `${g.n} ${t('cases')} · ${g.machines.size} ${t('machinesWord')}` : `${esc(g.factory)} · ${g.n} ${t('cases')}`) +
+      (level === 1 ? '<div style="margin-top:3px">' + FACTORIES.filter(f => g.byF[f]).map(f => `<span class="dot" style="background:${FCOLOR[f]};margin-right:3px"></span>${esc(f)} ${g.byF[f]}`).join(' &nbsp; ') + '</div>' : '');
     return iss.map((i, idx) => `<tr class="${idx === 0 ? 'grp' : ''}">
       ${idx === 0 ? `<td class="gname" rowspan="${iss.length}">${esc(g.label)}<div class="lbl font-normal">${sub}</div></td>` : ''}
       <td>${esc(i.label)}</td><td class="cnt">${i.n}</td></tr>`).join('');
@@ -575,7 +590,8 @@ function demoData() {
   const base = demoBase();
   const more = base.filter(r => r.machineRaw === 'ISO-LQ-(1.0)').map(r => Object.assign({}, r, {   // a second machine of the same model
     machineNo: '2#', machineKey: r.machineKey.replace(/\|\d+$/, '|2'), machineEn: r.machineEn.replace('1#', '2#'), machineCn: r.machineCn.replace('1#', '2#') }));
-  return base.concat(more).map(r => Object.assign(r, DEMO_KW[r.machineRaw] || {}));
+  const other = base.filter(r => r.machineRaw === 'ISO-LQ-(1.0)').slice(0, 2).map(r => Object.assign({}, r, { factory: 'Ayutthaya', machineKey: r.machineKey.replace(/^Pinewave/, 'Ayutthaya') }));   // same model, another factory
+  return base.concat(more, other).map(r => Object.assign(r, DEMO_KW[r.machineRaw] || {}));
 }
 load();
 </script>
