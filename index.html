@@ -80,9 +80,9 @@
   </div>
   <div class="max-w-7xl mx-auto px-3 pb-2 flex flex-wrap items-center gap-1">
     <nav class="flex gap-1 mr-auto">
+      <button class="tab" data-tab="model" data-i18n="tabModel"></button>
       <button class="tab on" data-tab="overview" data-i18n="tabOverview"></button>
       <button class="tab" data-tab="top" data-i18n="tabTop"></button>
-      <button class="tab" data-tab="model" data-i18n="tabModel"></button>
       <button class="tab" data-tab="log" data-i18n="tabLog"></button>
     </nav>
     <select id="fFactory" aria-label="Factory"></select>
@@ -159,8 +159,8 @@
 /* ================== CONFIG ================== */
 // Paste your deployed Web App URL (…/exec). Leave empty to preview with demo data.
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxNht563H7COeUnwfF4NUImMsv3bFGoIpiHsE4h1tTrPFemxnskTOBsCw02zQ-ts7G8/exec';
-const APP_VERSION = 'v13-2026-11-03';
-const MODEL_SORT_ASC = true;   // Model Summary tab: true = fewest -> most (as in the spec). false = most -> fewest   // shown under the title so you can tell which file is live
+const APP_VERSION = 'v14-2026-11-03';
+const MODEL_SORT_ASC = false;   // Model Summary tab: true = fewest -> most (as in the spec). false = most -> fewest   // shown under the title so you can tell which file is live
 const FACTORIES = ['Ayutthaya', 'Terahop 5000', 'Pinewave'];
 const FCOLOR = { 'Ayutthaya': '#2dd4bf', 'Terahop 5000': '#f59e0b', 'Pinewave': '#a78bfa' };
 
