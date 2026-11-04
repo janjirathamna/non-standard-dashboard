@@ -36,6 +36,9 @@
   dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:16px;width:min(460px,92vw)}
   dialog::backdrop{background:rgba(0,0,0,.55)}
   dialog h3{margin:0 0 2px;font-size:14px;font-weight:700;word-break:break-word}
+  .go{background:none;border:0;color:var(--muted);padding:0 5px;margin-left:4px;font-size:15px;line-height:1;cursor:pointer;border-radius:4px}
+  .go:hover{color:var(--accent);background:var(--panel2)}
+  #tblWhen tr.band td{background:var(--panel2);font-weight:600;color:var(--text);width:auto}
   #whenBody{max-height:60vh;overflow:auto;margin-top:8px;border:1px solid var(--line);border-radius:6px}
   #tblWhen td:first-child{color:var(--muted);width:44px}
   #report{display:none}
@@ -174,7 +177,7 @@
 /* ================== CONFIG ================== */
 // Paste your deployed Web App URL (…/exec). Leave empty to preview with demo data.
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxNht563H7COeUnwfF4NUImMsv3bFGoIpiHsE4h1tTrPFemxnskTOBsCw02zQ-ts7G8/exec';
-const APP_VERSION = 'v16-2026-11-03';
+const APP_VERSION = 'v17-2026-11-03';
 const MODEL_SORT_ASC = false;   // Model Summary tab: true = fewest -> most (as in the spec). false = most -> fewest   // shown under the title so you can tell which file is live
 const FACTORIES = ['Ayutthaya', 'Terahop 5000', 'Pinewave'];
 const FCOLOR = { 'Ayutthaya': '#2dd4bf', 'Terahop 5000': '#f59e0b', 'Pinewave': '#a78bfa' };
@@ -183,14 +186,14 @@ const FCOLOR = { 'Ayutthaya': '#2dd4bf', 'Terahop 5000': '#f59e0b', 'Pinewave': 
 const I18N = {
   en: { title:'Non-Standard Problem Report', addData:'＋ Add Data', factory:'Factory', machine:'Machine', reset:'Reset',
     all:'All factories', allM:'All machines', cases:'cases', chartTitle:'Issues per machine',
-    tabOverview:'Overview', topChartTitle:'Recurring issues (2+ times)', topChartHint:'Click a bar or the 🕒 button to see the date and time of every occurrence.', whenTip:'Show when it happened', colNo:'#', colDate:'Date', colClock:'Time of day', close:'Close', tabModel:'Model Summary', mAll:'All models', mBack:'← Back', mChart1:'Issues per model', mChart2:'Recurring issues in', mNoRec:'No issue occurred 2+ times in this model.', mChart3:'Issues on', mHint1:'Click a bar to see which issues keep repeating in that model.', mHint2:'Chart: issues that occurred 2+ times. Table: every issue, split by machine.', colMachine:'Machine', brand:'Brand', model:'Model', allB:'All brands', allMod:'All models', modelTitle:'Issues grouped by Brand + Model', modelNote:'All machines with the same brand and model are combined.', machinesWord:'machines', modelSortAsc:'Sorted ascending: fewest → most', modelSortDesc:'Sorted descending: most → fewest', repTitle:'Non-Standard Problem Report', repLog:'Issue log', rec:'Recurring issues (2+ times)', one:'One-off issues', generated:'Generated', nRec:'Recurring issue types', nOne:'One-off issues', dateRange:'Date', back:'← All machines', rankCol:'Rank', chartMachine:'Issues on', hintAll:'Click a bar to see the issues of that machine.', tabTop:'Top 3 Recurring', tabLog:'Issue Log',
+    tabOverview:'Overview', topChartTitle:'Recurring issues per machine', topChartHint:'One bar per machine (cases of issues that repeat). Click a bar, or the › next to an issue in the table, to see the dates and times.', whenTip:'Show when it happened', colNo:'#', colDate:'Date', colClock:'Time of day', close:'Close', tabModel:'Model Summary', mAll:'All models', mBack:'← Back', mChart1:'Issues per model', mChart2:'Recurring issues in', mNoRec:'No issue occurred 2+ times in this model.', mChart3:'Issues on', mHint1:'Click a bar to see which issues keep repeating in that model.', mHint2:'Chart: issues that occurred 2+ times. Table: every issue, split by machine.', colMachine:'Machine', brand:'Brand', model:'Model', allB:'All brands', allMod:'All models', modelTitle:'Issues grouped by Brand + Model', modelNote:'All machines with the same brand and model are combined.', machinesWord:'machines', modelSortAsc:'Sorted ascending: fewest → most', modelSortDesc:'Sorted descending: most → fewest', repTitle:'Non-Standard Problem Report', repLog:'Issue log', rec:'Recurring issues (2+ times)', one:'One-off issues', generated:'Generated', nRec:'Recurring issue types', nOne:'One-off issues', dateRange:'Date', back:'← All machines', rankCol:'Rank', chartMachine:'Issues on', hintAll:'Click a bar to see the issues of that machine.', tabTop:'Top 3 Recurring', tabLog:'Issue Log',
     topTitle:'Top 3 most recurring issues per machine', topNote:'Rank 1 = most frequent. Only issues that occurred 2+ times are listed; tied issues share the same rank.',
     issue:'Issue', times:'Times', logTitle:'Full issue log', time:'Time', solution:'Solution',
     loading:'Loading data…', demo:'Demo data shown. Set GAS_URL in index.html to load your sheets.',
     error:'Could not load data: ', empty:'No records match the current filters.', updated:'Updated', total:'Total' },
   zh: { title:'非标准问题报告', addData:'＋ 添加数据', factory:'工厂', machine:'机器', reset:'重置',
     all:'全部工厂', allM:'全部机器', cases:'起', chartTitle:'各机器问题统计',
-    tabOverview:'概览', topChartTitle:'重复发生的问题（2次及以上）', topChartHint:'点击柱子或 🕒 按钮，查看每次发生的日期和时间。', whenTip:'查看发生时间', colNo:'#', colDate:'日期', colClock:'时间', close:'关闭', tabModel:'机型排行', mAll:'全部机型', mBack:'← 返回', mChart1:'各机型问题数', mChart2:'重复问题：', mNoRec:'该机型没有发生2次及以上的问题。', mChart3:'问题统计：', mHint1:'点击柱子查看该机型的重复问题。', mHint2:'图表：发生2次及以上的问题。表格：全部问题，按机器分开。', colMachine:'机器', brand:'品牌', model:'机型', allB:'全部品牌', allMod:'全部机型', modelTitle:'按品牌 + 机型汇总的问题', modelNote:'相同品牌和机型的所有机器合并统计。', machinesWord:'台机器', modelSortAsc:'升序排列：由少到多', modelSortDesc:'降序排列：由多到少', repTitle:'非标准问题报告', repLog:'问题记录', rec:'重复发生的问题（2次及以上）', one:'仅发生一次的问题', generated:'生成时间', nRec:'重复问题种类', nOne:'单次问题', dateRange:'日期', back:'← 全部机器', rankCol:'名次', chartMachine:'问题统计：', hintAll:'点击柱子可查看该机器的问题。', tabTop:'重复问题前3', tabLog:'问题记录',
+    tabOverview:'概览', topChartTitle:'各机器的重复问题', topChartHint:'每台机器一根柱子（重复问题的起数）。点击柱子，或表格中问题旁的 ›，查看发生的日期和时间。', whenTip:'查看发生时间', colNo:'#', colDate:'日期', colClock:'时间', close:'关闭', tabModel:'机型排行', mAll:'全部机型', mBack:'← 返回', mChart1:'各机型问题数', mChart2:'重复问题：', mNoRec:'该机型没有发生2次及以上的问题。', mChart3:'问题统计：', mHint1:'点击柱子查看该机型的重复问题。', mHint2:'图表：发生2次及以上的问题。表格：全部问题，按机器分开。', colMachine:'机器', brand:'品牌', model:'机型', allB:'全部品牌', allMod:'全部机型', modelTitle:'按品牌 + 机型汇总的问题', modelNote:'相同品牌和机型的所有机器合并统计。', machinesWord:'台机器', modelSortAsc:'升序排列：由少到多', modelSortDesc:'降序排列：由多到少', repTitle:'非标准问题报告', repLog:'问题记录', rec:'重复发生的问题（2次及以上）', one:'仅发生一次的问题', generated:'生成时间', nRec:'重复问题种类', nOne:'单次问题', dateRange:'日期', back:'← 全部机器', rankCol:'名次', chartMachine:'问题统计：', hintAll:'点击柱子可查看该机器的问题。', tabTop:'重复问题前3', tabLog:'问题记录',
     topTitle:'各机器重复发生最多的前3大问题', topNote:'名次1 = 发生最多。仅列出发生2次及以上的问题，并列的问题名次相同。',
     issue:'问题', times:'次数', logTitle:'完整问题记录', time:'时间', solution:'解决方法',
     loading:'数据加载中…', demo:'当前为演示数据。请在 index.html 中设置 GAS_URL 以加载表格数据。',
@@ -415,12 +418,17 @@ function buildReport() {
 
 let topChartInst = null, whenList = [];
 function fmtDT(ts) { const v = String(ts || ''); return { d: v.slice(0, 10), tm: v.length > 10 ? v.slice(11, 16) : '—' }; }
-function openWhen(idx) {                             // every date + time one issue happened on one machine, oldest first
+function openWhen(idx) {                             // dates + times, oldest first. One issue, or every recurring issue of a machine
   const w = whenList[idx]; if (!w) return;
-  const times = [...w.times].sort();
+  let total = 0, html = '';
+  w.groups.forEach(g => {
+    const times = [...g.times].sort(); total += times.length;
+    if (g.label) html += `<tr class="band"><td colspan="3">${esc(g.label)} — ${times.length}</td></tr>`;
+    html += times.map((ts, k) => { const x = fmtDT(ts); return `<tr><td>${k + 1}</td><td>${esc(x.d)}</td><td>${esc(x.tm)}</td></tr>`; }).join('');
+  });
   $('whenTitle').textContent = w.title;
-  $('whenSub').textContent = `${times.length} ${t('cases')}`;
-  $('tblWhen').tBodies[0].innerHTML = times.map((ts, k) => { const x = fmtDT(ts); return `<tr><td>${k + 1}</td><td>${esc(x.d)}</td><td>${esc(x.tm)}</td></tr>`; }).join('');
+  $('whenSub').textContent = `${total} ${t('cases')}`;
+  $('tblWhen').tBodies[0].innerHTML = html;
   $('whenDlg').showModal();
 }
 
@@ -434,7 +442,7 @@ function renderTop(rows) {
     i.n++; i.times.push(r.timestamp || ''); m.issues.set(key, i); byM.set(r.machineKey, m);
   });
   let html = '', g = 0;
-  const chartItems = [];                              // same issues as the table: recurring only (2+ times)
+  const machineItems = [];                            // chart: one bar per machine
   [...byM.values()].sort((a, b) => FACTORIES.indexOf(a.factory) - FACTORIES.indexOf(b.factory) || a.name.localeCompare(b.name)).forEach(m => {
     const list = [...m.issues.values()].filter(i => i.n >= 2).sort((a, b) => b.n - a.n); // count of 1 = not recurring, skip
     if (!list.length) return;                               // machine has no recurring issue
@@ -443,38 +451,41 @@ function renderTop(rows) {
     const top = list.filter(i => i.n >= cut);
     top.forEach((i, idx) => {
       const rank = [...new Set(top.map(x => x.n))].indexOf(i.n) + 1;   // dense rank: 1,1,2 (no jump to 3)
-      const w = whenList.push({ title: `${m.name} — ${i.text}`, times: i.times }) - 1;
-      chartItems.push({ label: `${m.name} — ${i.text}`, n: i.n, factory: m.factory, w });
+      const w = whenList.push({ title: `${m.name} — ${i.text}`, groups: [{ label: '', times: i.times }] }) - 1;
       html += `<tr class="${idx === 0 ? 'grp' : ''} ${g % 2 ? 'alt' : ''}"><td>${idx === 0 ? `<span class="dot" style="background:${FCOLOR[m.factory]}"></span>${esc(m.factory)}` : ''}</td>
         <td>${idx === 0 ? esc(m.name) : ''}</td><td class="font-semibold">${rank}</td>
-        <td>${esc(i.text)} <button class="btn" style="padding:2px 6px;margin-left:6px" data-when="${w}" title="${esc(t('whenTip'))}">🕒</button></td>
+        <td>${esc(i.text)}<button class="go" data-when="${w}" title="${esc(t('whenTip'))}" aria-label="${esc(t('whenTip'))}">›</button></td>
         <td class="text-right font-semibold">${i.n}</td></tr>`;
     });
+    const w = whenList.push({ title: m.name, groups: list.map(i => ({ label: i.text, times: i.times })) }) - 1;
+    machineItems.push({ label: m.name, n: list.reduce((sum, i) => sum + i.n, 0), factory: m.factory, w,
+                        lines: list.slice(0, 5).map(i => `${i.text}: ${i.n}`).concat(list.length > 5 ? ['…'] : []) });
   });
   $('tblTop').tBodies[0].innerHTML = html || `<tr><td colspan="5" class="text-center lbl">${t('empty')}</td></tr>`;
 
-  // chart of the recurring issues
+  // chart: cases of recurring issues, one bar per machine
   if (topChartInst) { topChartInst.destroy(); topChartInst = null; }
-  chartItems.sort((a, b) => b.n - a.n || a.label.localeCompare(b.label));
-  $('topChartWrap').style.display = chartItems.length ? '' : 'none';
-  $('topChartHint').textContent = chartItems.length ? t('topChartHint') : t('empty');
-  if (!chartItems.length) return;
-  $('topChartWrap').style.height = Math.max(220, chartItems.reduce((sum, i) => sum + Math.max(32, wrap(i.label, 52).length * 15 + 14), 0) + 70) + 'px';
-  const txt = css('--text'), grid = css('--line'), maxN = chartItems[0].n;
+  machineItems.sort((a, b) => b.n - a.n || a.label.localeCompare(b.label));
+  $('topChartWrap').style.display = machineItems.length ? '' : 'none';
+  $('topChartHint').textContent = machineItems.length ? t('topChartHint') : t('empty');
+  if (!machineItems.length) return;
+  $('topChartWrap').style.height = Math.max(220, machineItems.length * 34 + 70) + 'px';
+  const txt = css('--text'), grid = css('--line'), maxN = machineItems[0].n;
   topChartInst = new Chart($('topChart'), {
     type: 'bar',
-    data: { labels: chartItems.map(i => wrap(i.label, 52)),
-      datasets: [{ label: t('cases'), data: chartItems.map(i => i.n), backgroundColor: chartItems.map(i => FCOLOR[i.factory]), borderRadius: 4, barThickness: 22 }] },
+    data: { labels: machineItems.map(i => i.label),
+      datasets: [{ label: t('cases'), data: machineItems.map(i => i.n), backgroundColor: machineItems.map(i => FCOLOR[i.factory]), borderRadius: 4, barThickness: 22 }] },
     options: {
       indexAxis: 'y', responsive: true, maintainAspectRatio: false, color: txt,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { title: c => chartItems[c[0].dataIndex].label, afterLabel: c => chartItems[c.dataIndex].factory } } },
+      plugins: { legend: { display: false }, tooltip: { callbacks: { title: c => machineItems[c[0].dataIndex].label,
+        afterLabel: c => machineItems[c.dataIndex].factory, afterBody: c => machineItems[c[0].dataIndex].lines } } },
       scales: { x: { beginAtZero: true, suggestedMax: Math.max(6, maxN + 1), ticks: { precision: 0, color: txt }, grid: { color: grid } },
                 y: { ticks: { autoSkip: false, color: txt }, grid: { display: false } } },
       onHover: (e, els) => { e.native.target.style.cursor = els.length ? 'pointer' : 'default'; },
-      onClick: (e, els) => { if (els.length) openWhen(chartItems[els[0].index].w); }
+      onClick: (e, els) => { if (els.length) openWhen(machineItems[els[0].index].w); }
     },
     plugins: [{ id: 'val', afterDatasetsDraw(c) { const x = c.ctx; x.save(); x.fillStyle = txt; x.font = '600 12px IBM Plex Sans, sans-serif'; x.textBaseline = 'middle';
-        c.getDatasetMeta(0).data.forEach((bar, i) => x.fillText(chartItems[i].n, bar.x + 6, bar.y)); x.restore(); } },
+        c.getDatasetMeta(0).data.forEach((bar, i) => x.fillText(machineItems[i].n, bar.x + 6, bar.y)); x.restore(); } },
       { id: 'bg', beforeDraw(c) { const x = c.ctx; x.save(); x.globalCompositeOperation = 'destination-over'; x.fillStyle = css('--panel'); x.fillRect(0, 0, c.width, c.height); x.restore(); } }]
   });
 }
