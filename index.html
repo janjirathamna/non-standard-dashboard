@@ -191,6 +191,15 @@
   <div class="flex justify-end gap-2 mt-3"><a id="imgDl" class="btn primary" download="report.png" style="display:none" data-i18n="dlPng"></a><button class="btn" id="imgClose" data-i18n="close"></button></div>
 </dialog>
 
+<dialog id="saveDlg">
+  <div style="font-weight:600;font-size:13px;margin-bottom:10px" data-i18n="saveTitle"></div>
+  <div class="flex flex-col gap-2" style="min-width:210px">
+    <button class="btn primary" id="saveChart" data-i18n="saveChart"></button>
+    <button class="btn primary" id="saveBoth" data-i18n="saveBoth"></button>
+    <button class="btn" id="saveNo" data-i18n="exit"></button>
+  </div>
+</dialog>
+
 <dialog id="warnDlg">
   <p id="warnTxt" style="font-size:12.5px;line-height:1.6;margin:0"></p>
   <div class="flex justify-end gap-2 mt-3"><button class="btn primary" id="warnYes" data-i18n="yes"></button><button class="btn" id="warnNo" data-i18n="exit"></button></div>
@@ -202,7 +211,7 @@
 /* ================== CONFIG ================== */
 // Paste your deployed Web App URL (…/exec). Leave empty to preview with demo data.
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxNht563H7COeUnwfF4NUImMsv3bFGoIpiHsE4h1tTrPFemxnskTOBsCw02zQ-ts7G8/exec';
-const APP_VERSION = 'v21-2026-11-06';
+const APP_VERSION = 'v22-2026-11-06';
 const MODEL_SORT_ASC = false;   // Model Summary tab: true = fewest -> most (as in the spec). false = most -> fewest   // shown under the title so you can tell which file is live
 const FACTORIES = ['Ayutthaya', 'Terahop 5000', 'Pinewave'];
 const FCOLOR = { 'Ayutthaya': '#2dd4bf', 'Terahop 5000': '#f59e0b', 'Pinewave': '#a78bfa' };
@@ -222,7 +231,7 @@ const I18N = {
     tMachines:'Machines', colMachines:'Machines', colNum:'#', topNoteM:'Rank 1 = most frequent. Only issues that happened 2+ times on the same model are listed; ties share a rank.', topChartTitle:'Recurring issues per machine', topChartHint:'One bar per machine (cases of issues that repeat). Click a bar, or the › next to an issue in the table, to see the dates and times.', whenTip:'Show when it happened', colNo:'#', colDate:'Date', colClock:'Time of day', close:'Close', tabModel:'Model Summary', mAll:'All models', mBack:'← Back', mChart1:'Issues per model', mChart2:'Recurring issues in', mNoRec:'No issue occurred 2+ times in this model.', mChart3:'Issues on', mHint1:'Click a bar to see which issues keep repeating in that model.', mHint2:'Chart: issues that occurred 2+ times. Table: every issue, split by machine.', colMachine:'Machine', brand:'Brand', model:'Model', allB:'All brands', allMod:'All models', modelTitle:'Issues grouped by Brand + Model', modelNote:'All machines with the same brand and model are combined.', machinesWord:'machines', modelSortAsc:'Sorted ascending: fewest → most', modelSortDesc:'Sorted descending: most → fewest', repTitle:'Non-Standard Problem Report', repLog:'Issue log', rec:'Recurring issues (2+ times)', one:'One-off issues', generated:'Generated', nRec:'Recurring issue types', nOne:'One-off issues', dateRange:'Date', back:'← All machines', rankCol:'Rank', chartMachine:'Issues on', hintAll:'Click a bar to see the issues of that machine.', tabTop:'Top 3 Recurring', tabLog:'Issue Log',
     topTitle:'Top 3 most recurring issues per machine', topNote:'Rank 1 = most frequent. Only issues that occurred 2+ times are listed; tied issues share the same rank.',
     issue:'Issue', times:'Times', logTitle:'Full issue log', time:'Time', solution:'Solution',
-    warnTxt:'Because there is a lot of data, we recommend downloading it as a CSV or PDF table. Do you want to continue saving it as an image?', yes:'Yes', exit:'Exit', imgBusy:'Creating the image…', imgFail:'Could not create the image. Try CSV or PDF instead.', dlPng:'⇩ Download PNG',
+    saveTitle:'Save as image', saveChart:'Chart only', saveBoth:'Chart + table', warnTxt:'Because there is a lot of data, we recommend downloading it as a CSV or PDF table. Do you want to continue saving it as an image?', yes:'Yes', exit:'Exit', imgBusy:'Creating the image…', imgFail:'Could not create the image. Try CSV or PDF instead.', dlPng:'⇩ Download PNG',
     loading:'Loading data…', demo:'Demo data shown. Set GAS_URL in index.html to load your sheets.',
     error:'Could not load data: ', empty:'No records match the current filters.', updated:'Updated', total:'Total' },
   zh: { title:'非标准问题报告', addData:'＋ 添加数据', factory:'工厂', machine:'机器', reset:'重置',
@@ -238,7 +247,7 @@ const I18N = {
     tMachines:'机器', colMachines:'机器', colNum:'#', topNoteM:'名次1 = 发生最多。仅列出同一机型发生2次及以上的问题；并列的名次相同。', topChartTitle:'各机器的重复问题', topChartHint:'每台机器一根柱子（重复问题的起数）。点击柱子，或表格中问题旁的 ›，查看发生的日期和时间。', whenTip:'查看发生时间', colNo:'#', colDate:'日期', colClock:'时间', close:'关闭', tabModel:'机型排行', mAll:'全部机型', mBack:'← 返回', mChart1:'各机型问题数', mChart2:'重复问题：', mNoRec:'该机型没有发生2次及以上的问题。', mChart3:'问题统计：', mHint1:'点击柱子查看该机型的重复问题。', mHint2:'图表：发生2次及以上的问题。表格：全部问题，按机器分开。', colMachine:'机器', brand:'品牌', model:'机型', allB:'全部品牌', allMod:'全部机型', modelTitle:'按品牌 + 机型汇总的问题', modelNote:'相同品牌和机型的所有机器合并统计。', machinesWord:'台机器', modelSortAsc:'升序排列：由少到多', modelSortDesc:'降序排列：由多到少', repTitle:'非标准问题报告', repLog:'问题记录', rec:'重复发生的问题（2次及以上）', one:'仅发生一次的问题', generated:'生成时间', nRec:'重复问题种类', nOne:'单次问题', dateRange:'日期', back:'← 全部机器', rankCol:'名次', chartMachine:'问题统计：', hintAll:'点击柱子可查看该机器的问题。', tabTop:'重复问题前3', tabLog:'问题记录',
     topTitle:'各机器重复发生最多的前3大问题', topNote:'名次1 = 发生最多。仅列出发生2次及以上的问题，并列的问题名次相同。',
     issue:'问题', times:'次数', logTitle:'完整问题记录', time:'时间', solution:'解决方法',
-    warnTxt:'由于数据较多，建议下载为 CSV 或 PDF 表格。是否仍要保存为图片？', yes:'是', exit:'退出', imgBusy:'正在生成图片…', imgFail:'无法生成图片，请改用 CSV 或 PDF。', dlPng:'⇩ 下载 PNG',
+    saveTitle:'保存为图片', saveChart:'仅图表', saveBoth:'图表 + 表格', warnTxt:'由于数据较多，建议下载为 CSV 或 PDF 表格。是否仍要保存为图片？', yes:'是', exit:'退出', imgBusy:'正在生成图片…', imgFail:'无法生成图片，请改用 CSV 或 PDF。', dlPng:'⇩ 下载 PNG',
     loading:'数据加载中…', demo:'当前为演示数据。请在 index.html 中设置 GAS_URL 以加载表格数据。',
     error:'数据加载失败：', empty:'没有符合当前筛选条件的记录。', updated:'更新时间', total:'总计' }
 };
@@ -797,10 +806,16 @@ function loadH2C() {                                 // html2canvas is fetched o
 function saveImage() {
   const tb = { top: $('tblTop'), model: $('tblModel'), log: $('tblLog') }[tab];
   const rows = tb ? tb.tBodies[0].rows.length : 0;
-  if (rows > LONG_ROWS) { $('warnTxt').textContent = t('warnTxt'); $('warnDlg').showModal(); }   // soft notice, user decides
-  else doSaveImage();
+  if (!tb) return doSaveImage('chart');             // overview: chart only
+  if (tab === 'log') return askLong('both', rows);  // issue log: table only
+  $('saveDlg').showModal();                         // chart only, or chart + table
 }
-async function doSaveImage() {                       // whole page of the tab: chart + every table row
+let pendImg = 'both';
+function askLong(mode, rows) {
+  if (mode === 'both' && rows > LONG_ROWS) { pendImg = mode; $('warnTxt').textContent = t('warnTxt'); $('warnDlg').showModal(); }   // soft notice, user decides
+  else doSaveImage(mode);
+}
+async function doSaveImage(mode) {                       // whole page of the tab: chart + every table row
   $('imgTitle').textContent = t('imgTitle'); $('imgHint').textContent = t('imgBusy');
   $('imgPrev').style.display = 'none'; $('imgDl').style.display = 'none'; $('imgDlg').showModal();
   try {
@@ -811,13 +826,14 @@ async function doSaveImage() {                       // whole page of the tab: c
     const sub = [f.selectedOptions[0].textContent, b.value ? b.selectedOptions[0].textContent : '', m.value ? m.selectedOptions[0].textContent : '',
                  (s1 || e1) ? `${s1 || '…'} – ${e1 || '…'}` : ''].filter(Boolean).join('  |  ') + '   ·   ' + new Date().toLocaleString(lang === 'zh' ? 'zh-CN' : 'en-GB');
     const font = "'IBM Plex Sans','Noto Sans SC',sans-serif", txt = css('--text'), mut = css('--muted'), bg = css('--panel'), bg2 = css('--panel2');
-    const w = el.offsetWidth, h = el.scrollHeight + 90;
+    const w = el.offsetWidth, tblH = mode === 'chart' ? [...el.querySelectorAll('table')].reduce((a, x) => a + x.offsetHeight, 0) : 0, h = el.scrollHeight - tblH + 90;
     const scale = Math.max(0.5, Math.min(2, 16000 / h, 120e6 / (w * h)));          // keep the canvas inside browser limits
     const cv = await html2canvas(el, { backgroundColor: bg, scale, useCORS: true, logging: false, onclone: (doc, node) => {
       node.classList.remove('hidden');
       Object.assign(node.style, { padding: '16px', border: '0', background: bg, height: 'auto', maxHeight: 'none' });
       if (tab === 'top' || tab === 'model') node.firstElementChild.style.display = 'none';          // back button + breadcrumb
       node.querySelectorAll('.go,.btn,#tBack,#mBack').forEach(x => x.style.display = 'none');
+      if (mode === 'chart') node.querySelectorAll('table').forEach(x => (x.closest('.scroll') || x).style.display = 'none');
       node.querySelectorAll('.scroll').forEach(x => x.style.overflow = 'visible');
       node.querySelectorAll('th').forEach(x => x.style.position = 'static');
       node.querySelectorAll('.lnk,.cellgo').forEach(x => x.style.borderBottom = '0');
@@ -870,7 +886,11 @@ $('topCrumb').onclick = e => {
 $('whenClose').onclick = () => $('whenDlg').close();
 $('whenDlg').addEventListener('click', e => { if (e.target === $('whenDlg')) $('whenDlg').close(); });
 $('btnPng').onclick = saveImage;
-$('warnYes').onclick = () => { $('warnDlg').close(); doSaveImage(); };
+$('saveChart').onclick = () => { $('saveDlg').close(); doSaveImage('chart'); };
+$('saveBoth').onclick = () => { $('saveDlg').close(); askLong('both', ({ top: $('tblTop'), model: $('tblModel') }[tab]).tBodies[0].rows.length); };
+$('saveNo').onclick = () => $('saveDlg').close();
+$('saveDlg').addEventListener('click', e => { if (e.target === $('saveDlg')) $('saveDlg').close(); });
+$('warnYes').onclick = () => { $('warnDlg').close(); doSaveImage(pendImg); };
 $('warnNo').onclick = () => $('warnDlg').close();
 $('warnDlg').addEventListener('click', e => { if (e.target === $('warnDlg')) $('warnDlg').close(); });
 $('imgClose').onclick = () => $('imgDlg').close();
