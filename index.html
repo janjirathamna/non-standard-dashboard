@@ -43,6 +43,12 @@
   #whenBody{max-height:60vh;overflow:auto;margin-top:8px;border:1px solid var(--line);border-radius:6px}
   #tblWhen td:first-child{color:var(--muted);width:44px}
   #tblTop td.gname{font-weight:600;vertical-align:top;width:26%}
+  #tblTop td.gname.wide{width:38%}
+  #tblTop td.c{text-align:center}
+  #tblTop tr.tot td{font-weight:700;background:var(--panel2);border-top:1px dashed var(--line)}
+  #tblTop tr.tot td.lbl{font-weight:600}
+  .cellgo{background:none;border:0;border-bottom:1px dotted var(--muted);padding:0 3px;font:inherit;font-weight:700;color:var(--text);cursor:pointer}
+  .cellgo:hover{color:var(--accent);border-bottom-color:var(--accent)}
   .lnk{background:none;border:0;border-bottom:1px dashed var(--muted);padding:0;font:inherit;font-weight:600;color:var(--text);cursor:pointer;text-align:left}
   .lnk:hover{color:var(--accent);border-bottom-color:var(--accent)}
   .chip{display:inline-flex;align-items:center;gap:2px;padding:1px 8px;margin:2px 4px 2px 0;border:1px solid var(--line);border-radius:10px;font-size:11px;white-space:nowrap}
@@ -191,7 +197,7 @@
 /* ================== CONFIG ================== */
 // Paste your deployed Web App URL (…/exec). Leave empty to preview with demo data.
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxNht563H7COeUnwfF4NUImMsv3bFGoIpiHsE4h1tTrPFemxnskTOBsCw02zQ-ts7G8/exec';
-const APP_VERSION = 'v18-2026-11-04';
+const APP_VERSION = 'v19-2026-11-06';
 const MODEL_SORT_ASC = false;   // Model Summary tab: true = fewest -> most (as in the spec). false = most -> fewest   // shown under the title so you can tell which file is live
 const FACTORIES = ['Ayutthaya', 'Terahop 5000', 'Pinewave'];
 const FCOLOR = { 'Ayutthaya': '#2dd4bf', 'Terahop 5000': '#f59e0b', 'Pinewave': '#a78bfa' };
@@ -205,7 +211,7 @@ const I18N = {
     imgNone:'This page has no chart to save. Open Overview, Top 3 or Model Summary and try again.',
     tT1:'Cases per model', tT2a:'Top 5 issues of', tT2b:'Machines of', tT3:'Top 5 issues of machine',
     tH1:'Click a bar to see the model’s top 5 issues, or click a model name (on the axis or in the table) to see its machines.',
-    tH2a:'Top 5 issues of this model. The table lists every issue and the machines it happened on; › shows the dates and times.',
+    tH2a:'Top 5 issues of this model. The table splits every issue by machine number and factory; click a number to see that machine’s top 5 issues; › shows the dates and times.',
     tH2b:'Cases per machine. Click a bar or a machine name to see that machine’s top 5 issues.',
     tH3:'Top 5 issues of this machine. The table lists every issue; › shows the dates and times.',
     tMachines:'Machines', colMachines:'Machines', colNum:'#', topNoteM:'Rank 1 = most frequent. Only issues that happened 2+ times on the same model are listed; ties share a rank.', topChartTitle:'Recurring issues per machine', topChartHint:'One bar per machine (cases of issues that repeat). Click a bar, or the › next to an issue in the table, to see the dates and times.', whenTip:'Show when it happened', colNo:'#', colDate:'Date', colClock:'Time of day', close:'Close', tabModel:'Model Summary', mAll:'All models', mBack:'← Back', mChart1:'Issues per model', mChart2:'Recurring issues in', mNoRec:'No issue occurred 2+ times in this model.', mChart3:'Issues on', mHint1:'Click a bar to see which issues keep repeating in that model.', mHint2:'Chart: issues that occurred 2+ times. Table: every issue, split by machine.', colMachine:'Machine', brand:'Brand', model:'Model', allB:'All brands', allMod:'All models', modelTitle:'Issues grouped by Brand + Model', modelNote:'All machines with the same brand and model are combined.', machinesWord:'machines', modelSortAsc:'Sorted ascending: fewest → most', modelSortDesc:'Sorted descending: most → fewest', repTitle:'Non-Standard Problem Report', repLog:'Issue log', rec:'Recurring issues (2+ times)', one:'One-off issues', generated:'Generated', nRec:'Recurring issue types', nOne:'One-off issues', dateRange:'Date', back:'← All machines', rankCol:'Rank', chartMachine:'Issues on', hintAll:'Click a bar to see the issues of that machine.', tabTop:'Top 3 Recurring', tabLog:'Issue Log',
@@ -220,7 +226,7 @@ const I18N = {
     imgNone:'此页面没有可保存的图表。请打开概览、前3名或机型排行后重试。',
     tT1:'各机型起数', tT2a:'前5大问题：', tT2b:'机器：', tT3:'该机器前5大问题：',
     tH1:'点击柱子查看该机型的前5大问题；点击机型名称（坐标轴或表格中）查看该机型的机器。',
-    tH2a:'该机型的前5大问题。表格列出全部问题及发生的机器；点击 › 查看日期和时间。',
+    tH2a:'该机型的前5大问题。表格按机器编号和工厂列出每个问题的次数；点击数字查看该机器的前5大问题；点击 › 查看日期和时间。',
     tH2b:'各机器的起数。点击柱子或机器名称，查看该机器的前5大问题。',
     tH3:'该机器的前5大问题。表格列出全部问题；点击 › 查看日期和时间。',
     tMachines:'机器', colMachines:'机器', colNum:'#', topNoteM:'名次1 = 发生最多。仅列出同一机型发生2次及以上的问题；并列的名次相同。', topChartTitle:'各机器的重复问题', topChartHint:'每台机器一根柱子（重复问题的起数）。点击柱子，或表格中问题旁的 ›，查看发生的日期和时间。', whenTip:'查看发生时间', colNo:'#', colDate:'日期', colClock:'时间', close:'关闭', tabModel:'机型排行', mAll:'全部机型', mBack:'← 返回', mChart1:'各机型问题数', mChart2:'重复问题：', mNoRec:'该机型没有发生2次及以上的问题。', mChart3:'问题统计：', mHint1:'点击柱子查看该机型的重复问题。', mHint2:'图表：发生2次及以上的问题。表格：全部问题，按机器分开。', colMachine:'机器', brand:'品牌', model:'机型', allB:'全部品牌', allMod:'全部机型', modelTitle:'按品牌 + 机型汇总的问题', modelNote:'相同品牌和机型的所有机器合并统计。', machinesWord:'台机器', modelSortAsc:'升序排列：由少到多', modelSortDesc:'降序排列：由多到少', repTitle:'非标准问题报告', repLog:'问题记录', rec:'重复发生的问题（2次及以上）', one:'仅发生一次的问题', generated:'生成时间', nRec:'重复问题种类', nOne:'单次问题', dateRange:'日期', back:'← 全部机器', rankCol:'名次', chartMachine:'问题统计：', hintAll:'点击柱子可查看该机器的问题。', tabTop:'重复问题前3', tabLog:'问题记录',
@@ -471,6 +477,7 @@ function buildReport() {
 
 let topChartInst = null, whenList = [], topNav = { model: null, mode: null, machine: null };
 // level 1: all models | 2a: one model -> its top issues | 2b: one model -> its machines | 3: one machine -> its top issues
+const numOf = no => { const d = String(no || '').match(/\d+/); return d ? d[0] : ''; };      // '2#' -> '2'
 function fmtDT(ts) { const v = String(ts || ''); return { d: v.slice(0, 10), tm: v.length > 10 ? v.slice(11, 16) : '—' }; }
 function openWhen(idx) {                             // dates + times, oldest first, with the machine it happened on
   const w = whenList[idx]; if (!w) return;
@@ -502,7 +509,28 @@ function buildModels(rows) {                         // model -> machines + issu
   return [...map.values()];
 }
 
+let topCtx = { items: [], o: {}, horizontal: false };
+function topHit(ev) {                                // what is under the pointer: a bar, or a name on the axis
+  const ch = topChartInst; if (!ch) return null;
+  const { items, o, horizontal } = topCtx, r = ch.canvas.getBoundingClientRect(), a = ch.chartArea;
+  const x = ev.clientX - r.left, y = ev.clientY - r.top;
+  if (o.onLabel) {                                   // Chart.js only fires onClick inside the plot area, so axis names are hit-tested here
+    let i = -1;
+    if (horizontal && x < a.left && y >= a.top && y <= a.bottom) i = ch.scales.y.getValueForPixel(y);
+    else if (!horizontal && y > a.bottom && x >= a.left && x <= a.right) i = ch.scales.x.getValueForPixel(x);
+    if (i >= 0 && i < items.length) return { item: items[i], kind: 'label' };
+  }
+  if (o.onBar) {
+    const els = ch.getElementsAtEventForMode(ev, 'nearest', { intersect: true }, false);
+    if (els.length) return { item: items[els[0].index], kind: 'bar' };
+  }
+  return null;
+}
+$('topChart').addEventListener('click', ev => { const h = topHit(ev); if (h) (h.kind === 'label' ? topCtx.o.onLabel : topCtx.o.onBar)(h.item); });
+$('topChart').addEventListener('mousemove', ev => { $('topChart').style.cursor = topHit(ev) ? 'pointer' : 'default'; });
+
 function drawTopChart(items, o) {                    // o = { horizontal, onBar(item), onLabel(item) }
+  topCtx = { items, o, horizontal: !!o.horizontal };
   if (topChartInst) { topChartInst.destroy(); topChartInst = null; }
   $('topChartWrap').style.display = items.length ? '' : 'none';
   if (!items.length) return;
@@ -510,9 +538,8 @@ function drawTopChart(items, o) {                    // o = { horizontal, onBar(
   $('topChartWrap').style.height = horizontal ? Math.max(220, items.length * 34 + 80) + 'px' : '440px';
   const txt = css('--text'), grid = css('--line'), maxN = Math.max(...items.map(i => i.n));
   const facs = FACTORIES.filter(f => items.some(i => i.byF[f]));
-  const cat = { stacked: true, ticks: { autoSkip: false, color: txt, maxRotation: 0, minRotation: 0 }, grid: { display: false } };
+  const cat = { stacked: true, ticks: { autoSkip: false, color: o.onLabel ? css('--accent') : txt, maxRotation: 0, minRotation: 0 }, grid: { display: false } };
   const val = { stacked: true, beginAtZero: true, suggestedMax: Math.max(6, maxN + 1), ticks: { precision: 0, color: txt }, grid: { color: grid } };
-  const axisHit = (e, ch) => (horizontal && o.onLabel && e.x < ch.chartArea.left) ? ch.scales.y.getValueForPixel(e.y) : -1;   // click on a name on the axis
   topChartInst = new Chart($('topChart'), {
     type: 'bar',
     data: { labels: items.map(i => i.label),
@@ -522,13 +549,7 @@ function drawTopChart(items, o) {                    // o = { horizontal, onBar(
       plugins: { legend: { display: true, position: 'top', labels: { color: txt, boxWidth: 12, boxHeight: 12 } },
         tooltip: { callbacks: { title: c => items[c[0].dataIndex].full || [].concat(items[c[0].dataIndex].label).join(' '),
           afterBody: c => Object.keys(items[c[0].dataIndex].byF).length > 1 ? t('total') + ': ' + items[c[0].dataIndex].n : '' } } },
-      scales: horizontal ? { x: val, y: cat } : { x: cat, y: val },
-      onHover: (e, els, ch) => { const a = axisHit(e, ch); e.native.target.style.cursor = ((els.length && o.onBar) || (a >= 0 && a < items.length)) ? 'pointer' : 'default'; },
-      onClick: (e, els, ch) => {
-        const a = axisHit(e, ch);
-        if (a >= 0 && a < items.length) { o.onLabel(items[a]); return; }
-        if (els.length && o.onBar) o.onBar(items[els[0].index]);
-      }
+      scales: horizontal ? { x: val, y: cat } : { x: cat, y: val }
     },
     plugins: [{ id: 'val', afterDatasetsDraw(c) { drawBarLabels(c, items, horizontal, txt); } },
       { id: 'bg', beforeDraw(c) { const x = c.ctx; x.save(); x.globalCompositeOperation = 'destination-over'; x.fillStyle = css('--panel'); x.fillRect(0, 0, c.width, c.height); x.restore(); } }]
@@ -575,18 +596,40 @@ function renderTop(rows) {
     title = `${t('tT2a')} ${mg.label}`; hint = t('tH2a');
     items = iss.slice(0, 5).map(i => ({ label: wrap(i.label, 18), full: i.label, n: i.n, byF: i.byF }));
     opts = { horizontal: false };
-    head = `<tr><th>${esc(t('colNum'))}</th><th>${esc(t('issue'))}</th><th>${esc(t('colMachines'))}</th><th class="text-right">${esc(t('times'))}</th></tr>`;
+    const facCols = FACTORIES.filter(f => mg.byF[f]);
+    head = `<tr><th>${esc(t('colNum'))}</th><th>${esc(t('issue'))}</th><th>${esc(t('machine'))}</th>` +
+      facCols.map(f => `<th class="text-center">${facDot(f)}${esc(f)}</th>`).join('') + `<th class="text-right">${esc(t('times'))}</th></tr>`;
     iss.forEach((i, k) => {
-      const chips = [...i.machines.values()].sort((a, b) => b.n - a.n || (a.no || a.label).localeCompare(b.no || b.label, undefined, { numeric: true }))
-        .map(m => `<span class="chip" title="${esc(m.factory)}">${facDot(m.factory)}${esc((m.no || m.label) + (multi ? ' · ' + m.factory : ''))} ×${m.n}</span>`).join('');
-      body += `<tr><td class="lbl">${k + 1}</td><td>${esc(i.label)}${go(`${mg.label} — ${i.label}`, i.times, multi)}</td><td>${chips}</td><td class="text-right font-semibold">${i.n}</td></tr>`;
+      const byNo = new Map();                                            // one row per machine number, one column per factory
+      i.machines.forEach((m, key) => {
+        const n = numOf(m.no), rk = n || ('x|' + m.label);
+        const r = byNo.get(rk) || { n: n ? +n : Infinity, label: n ? `${mg.label} #${n}` : m.label, cells: {}, total: 0 };
+        const c = r.cells[m.factory] || (r.cells[m.factory] = { n: 0, key });
+        c.n += m.n; r.total += m.n; byNo.set(rk, r);
+      });
+      const rowsM = [...byNo.values()].sort((a, b) => a.n - b.n || a.label.localeCompare(b.label, undefined, { numeric: true }));
+      const showTot = rowsM.length > 1, span = rowsM.length + (showTot ? 1 : 0), alt = k % 2 ? 'alt' : '';
+      rowsM.forEach((r, idx) => {
+        body += `<tr class="${idx === 0 ? 'grp' : ''} ${alt}">` +
+          (idx === 0 ? `<td class="lbl" rowspan="${span}" style="vertical-align:top">${k + 1}</td>
+            <td class="gname wide" rowspan="${span}">${esc(i.label)}${go(`${mg.label} — ${i.label}`, i.times, multi)}
+              <div class="lbl" style="font-weight:400">${i.n} ${t('cases')}</div></td>` : '') +
+          `<td>${esc(r.label)}</td>` +
+          facCols.map(f => { const c = r.cells[f];
+            return `<td class="c">${c ? `<button class="cellgo" data-go="machine" data-machine="${esc(c.key)}" title="${esc(r.label + ' · ' + f)}">${c.n}</button>` : '<span class="lbl">-</span>'}</td>`; }).join('') +
+          `<td class="text-right font-semibold">${r.total}</td></tr>`;
+      });
+      if (showTot) body += `<tr class="tot ${alt}"><td class="lbl">${esc(t('total'))}</td>` +
+        facCols.map(f => `<td class="c">${i.byF[f] || '-'}</td>`).join('') + `<td class="text-right">${i.n}</td></tr>`;
     });
     crumb = `${root}${sep}<span class="font-semibold px-1">${esc(mg.label)}</span>`;
   } else if (level === '2b') {
     const ms = [...mg.machines.values()].sort(byN);
     title = `${t('tT2b')} ${mg.label}`; hint = t('tH2b');
-    items = ms.map(m => ({ key: m.key, label: multi ? [m.no || m.label, m.factory] : (m.no || m.label), full: m.label, n: m.n, byF: { [m.factory]: m.n } }));
-    opts = { horizontal: false, onBar: it => goto({ model: mg.key, mode: 'machines', machine: it.key }) };
+    items = ms.map(m => { const n = numOf(m.no), nm = n ? `${mg.label} #${n}` : m.label;      // e.g. "Axxon COVER #1"
+      return { key: m.key, label: wrap(nm, 14), full: `${nm} · ${m.factory}`, n: m.n, byF: { [m.factory]: m.n } }; });
+    const pickM = it => goto({ model: mg.key, mode: 'machines', machine: it.key });
+    opts = { horizontal: false, onBar: pickM, onLabel: pickM };
     head = `<tr><th>${esc(t('machine'))}</th><th>${esc(t('issue'))}</th><th class="text-right">${esc(t('times'))}</th></tr>`;
     ms.forEach((m, gi) => {
       const iss = [...m.issues.values()].sort(byN);
