@@ -202,7 +202,7 @@
 /* ================== CONFIG ================== */
 // Paste your deployed Web App URL (…/exec). Leave empty to preview with demo data.
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxNht563H7COeUnwfF4NUImMsv3bFGoIpiHsE4h1tTrPFemxnskTOBsCw02zQ-ts7G8/exec';
-const APP_VERSION = 'v20-2026-11-06';
+const APP_VERSION = 'v21-2026-11-06';
 const MODEL_SORT_ASC = false;   // Model Summary tab: true = fewest -> most (as in the spec). false = most -> fewest   // shown under the title so you can tell which file is live
 const FACTORIES = ['Ayutthaya', 'Terahop 5000', 'Pinewave'];
 const FCOLOR = { 'Ayutthaya': '#2dd4bf', 'Terahop 5000': '#f59e0b', 'Pinewave': '#a78bfa' };
@@ -568,7 +568,16 @@ function renderTop(rows) {
   const models = buildModels(rows).sort((a, b) => b.n - a.n || a.label.localeCompare(b.label));
   let mg = topNav.model ? models.find(g => g.key === topNav.model) : null;
   if (!mg) topNav = { model: null, mode: null, machine: null };
-  if (mg && topNav.mode === 'machines' && topNav.machine && !mg.machines.has(topNav.machine)) topNav.machine = null;
+  const mm = new Map();                                // machines of the model, same machine number in different factories merged into one
+  if (mg) mg.machines.forEach(m => {
+    const n = numOf(m.no), k = n || ('x|' + m.label);
+    const g = mm.get(k) || { key: k, label: n ? `${mg.label} #${n}` : m.label, n: 0, byF: {}, issues: new Map() };
+    g.n += m.n; g.byF[m.factory] = (g.byF[m.factory] || 0) + m.n;
+    m.issues.forEach((i, ik) => { const x = g.issues.get(ik) || { label: i.label, n: 0, byF: {}, times: [] };
+      x.n += i.n; x.byF[m.factory] = (x.byF[m.factory] || 0) + i.n; x.times.push(...i.times); g.issues.set(ik, x); });
+    mm.set(k, g);
+  });
+  if (mg && topNav.mode === 'machines' && topNav.machine && !mm.has(topNav.machine)) topNav.machine = null;
   const level = !mg ? '1' : topNav.mode === 'issues' ? '2a' : topNav.machine ? '3' : '2b';
   const multi = mg ? Object.keys(mg.byF).length > 1 : false;            // does this model run in more than one factory?
   const byN = (a, b) => b.n - a.n || a.label.localeCompare(b.label, undefined, { numeric: true });
@@ -605,13 +614,13 @@ function renderTop(rows) {
     opts = { horizontal: false };
     const facCols = FACTORIES.filter(f => mg.byF[f]);
     head = `<tr><th>${esc(t('colNum'))}</th><th>${esc(t('issue'))}</th><th>${esc(t('machine'))}</th>` +
-      facCols.map(f => `<th class="text-center">${facDot(f)}${esc(f)}</th>`).join('') + `<th class="text-right">${esc(t('times'))}</th></tr>`;
+      facCols.map(f => `<th class="text-center">${facDot(f)}${esc(f)}</th>`).join('') + `</tr>`;
     iss.forEach((i, k) => {
       const byNo = new Map();                                            // one row per machine number, one column per factory
       i.machines.forEach((m, key) => {
         const n = numOf(m.no), rk = n || ('x|' + m.label);
         const r = byNo.get(rk) || { n: n ? +n : Infinity, label: n ? `${mg.label} #${n}` : m.label, cells: {}, total: 0 };
-        const c = r.cells[m.factory] || (r.cells[m.factory] = { n: 0, key });
+        const c = r.cells[m.factory] || (r.cells[m.factory] = { n: 0, key: rk });
         c.n += m.n; r.total += m.n; byNo.set(rk, r);
       });
       const rowsM = [...byNo.values()].sort((a, b) => a.n - b.n || a.label.localeCompare(b.label, undefined, { numeric: true }));
@@ -624,40 +633,41 @@ function renderTop(rows) {
           `<td>${esc(r.label)}</td>` +
           facCols.map(f => { const c = r.cells[f];
             return `<td class="c">${c ? `<button class="cellgo" data-go="machine" data-machine="${esc(c.key)}" title="${esc(r.label + ' · ' + f)}">${c.n}</button>` : '<span class="lbl">-</span>'}</td>`; }).join('') +
-          `<td class="text-right font-semibold">${r.total}</td></tr>`;
+          `</tr>`;
       });
       if (showTot) body += `<tr class="tot ${alt}"><td class="lbl">${esc(t('total'))}</td>` +
-        facCols.map(f => `<td class="c">${i.byF[f] || '-'}</td>`).join('') + `<td class="text-right">${i.n}</td></tr>`;
+        facCols.map(f => `<td class="c">${i.byF[f] || '-'}</td>`).join('') + `</tr>`;
     });
     crumb = `${root}${sep}<span class="font-semibold px-1">${esc(mg.label)}</span>`;
   } else if (level === '2b') {
-    const ms = [...mg.machines.values()].sort(byN);
+    const ms = [...mm.values()].sort(byN);
     title = `${t('tT2b')} ${mg.label}`; hint = t('tH2b');
-    items = ms.map(m => { const n = numOf(m.no), nm = n ? `${mg.label} #${n}` : m.label;      // e.g. "Axxon COVER #1"
-      return { key: m.key, label: wrap(nm, 14), full: `${nm} · ${m.factory}`, n: m.n, byF: { [m.factory]: m.n } }; });
+    items = ms.map(m => ({ key: m.key, label: wrap(m.label, 14), full: m.label, n: m.n, byF: m.byF }));
     const pickM = it => goto({ model: mg.key, mode: 'machines', machine: it.key });
     opts = { horizontal: false, onBar: pickM, onLabel: pickM };
     head = `<tr><th>${esc(t('machine'))}</th><th>${esc(t('issue'))}</th><th class="text-right">${esc(t('times'))}</th></tr>`;
     ms.forEach((m, gi) => {
-      const iss = [...m.issues.values()].sort(byN);
+      const iss = [...m.issues.values()].sort(byN), mu = Object.keys(m.byF).length > 1;
+      const facs = FACTORIES.filter(f => m.byF[f]).map(f => `${facDot(f)}${esc(f)}${mu ? ' ' + m.byF[f] : ''}`).join(' &nbsp; ');
       iss.forEach((i, idx) => {
         body += `<tr class="${idx === 0 ? 'grp' : ''} ${gi % 2 ? 'alt' : ''}">` +
           (idx === 0 ? `<td class="gname" rowspan="${iss.length}"><button class="lnk" data-go="machine" data-machine="${esc(m.key)}">${esc(m.label)}</button>
-            <div class="lbl" style="font-weight:400">${facDot(m.factory)}${esc(m.factory)} · ${m.n} ${t('cases')}</div></td>` : '') +
-          `<td>${esc(i.label)}${go(`${m.label} — ${i.label}`, i.times, false)}</td><td class="text-right font-semibold">${i.n}</td></tr>`;
+            <div class="lbl" style="font-weight:400">${facs} · ${m.n} ${t('cases')}</div></td>` : '') +
+          `<td>${esc(i.label)}${go(`${m.label} — ${i.label}`, i.times, mu)}</td><td class="text-right font-semibold">${i.n}</td></tr>`;
       });
     });
     crumb = `${root}${sep}<span class="font-semibold px-1">${esc(mg.label)}</span>${sep}<span>${esc(t('tMachines'))}</span>`;
   } else {
-    const m = mg.machines.get(topNav.machine), iss = [...m.issues.values()].sort(byN);
+    const m = mm.get(topNav.machine), iss = [...m.issues.values()].sort(byN), mu = Object.keys(m.byF).length > 1;
+    const facs = FACTORIES.filter(f => m.byF[f]).map(f => `${facDot(f)}${esc(f)}${mu ? ' ' + m.byF[f] : ''}`).join(' &nbsp; ');
     title = `${t('tT3')} ${m.label}`; hint = t('tH3');
-    items = iss.slice(0, 5).map(i => ({ label: wrap(i.label, 18), full: i.label, n: i.n, byF: { [m.factory]: i.n } }));
+    items = iss.slice(0, 5).map(i => ({ label: wrap(i.label, 18), full: i.label, n: i.n, byF: i.byF }));
     opts = { horizontal: false };
     head = `<tr><th>${esc(t('machine'))}</th><th>${esc(t('issue'))}</th><th class="text-right">${esc(t('times'))}</th></tr>`;
     iss.forEach((i, idx) => {
       body += `<tr class="${idx === 0 ? 'grp' : ''}">` +
-        (idx === 0 ? `<td class="gname" rowspan="${iss.length}">${esc(m.label)}<div class="lbl" style="font-weight:400">${facDot(m.factory)}${esc(m.factory)} · ${m.n} ${t('cases')}</div></td>` : '') +
-        `<td>${esc(i.label)}${go(`${m.label} — ${i.label}`, i.times, false)}</td><td class="text-right font-semibold">${i.n}</td></tr>`;
+        (idx === 0 ? `<td class="gname" rowspan="${iss.length}">${esc(m.label)}<div class="lbl" style="font-weight:400">${facs} · ${m.n} ${t('cases')}</div></td>` : '') +
+        `<td>${esc(i.label)}${go(`${m.label} — ${i.label}`, i.times, mu)}</td><td class="text-right font-semibold">${i.n}</td></tr>`;
     });
     crumb = `${root}${sep}<button class="btn" data-nav="machines">${esc(mg.label)}</button>${sep}<span class="font-semibold px-1">${esc(m.label)}</span>`;
   }
