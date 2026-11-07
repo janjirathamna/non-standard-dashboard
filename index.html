@@ -105,6 +105,9 @@
       <button class="tab" data-tab="model" data-i18n="tabModel"></button>
       <button class="tab on" data-tab="overview" data-i18n="tabOverview"></button>
       <button class="tab" data-tab="top" data-i18n="tabTop"></button>
+      <button class="tab" data-tab="downtime" data-i18n="tabDowntime"></button>
+      <button class="tab" data-tab="modules" data-i18n="tabModules"></button>
+      <button class="tab" data-tab="remarks" data-i18n="tabRemarks"></button>
       <button class="tab" data-tab="log" data-i18n="tabLog"></button>
     </nav>
     <select id="fFactory" aria-label="Factory"></select>
@@ -163,6 +166,44 @@
     </div>
   </section>
 
+  <section class="view panel p-3 hidden" data-view="downtime">
+    <div id="dtCards" class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3"></div>
+    <div class="font-semibold" id="dtTitle"></div>
+    <div class="lbl mb-1" id="dtHint"></div>
+    <div id="dtWrap" class="relative w-full mb-3"><canvas id="dtChart"></canvas></div>
+    <div class="font-semibold" id="dtTitle2"></div>
+    <div id="dtWrap2" class="relative w-full mb-3"><canvas id="dtChart2"></canvas></div>
+    <div class="font-semibold mb-1" id="dtTblTitle"></div>
+    <div class="scroll">
+      <table class="w-full" id="tblDt">
+        <thead><tr><th data-i18n="time"></th><th data-i18n="factory"></th><th data-i18n="machine"></th><th data-i18n="issue"></th><th class="text-right" data-i18n="colMin"></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="view panel p-3 hidden" data-view="modules">
+    <div class="flex items-center justify-between mb-1 gap-2"><div class="font-semibold" data-i18n="modTitle"></div><span id="modCount" class="lbl"></span></div>
+    <p class="lbl mb-2" data-i18n="modNote"></p>
+    <div class="scroll">
+      <table class="w-full" id="tblMod">
+        <thead><tr><th data-i18n="factory"></th><th data-i18n="machine"></th><th data-i18n="colModule"></th><th data-i18n="colFirst"></th><th data-i18n="colLast"></th><th class="text-right" data-i18n="colEvents"></th><th data-i18n="colStatus"></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="view panel p-3 hidden" data-view="remarks">
+    <div class="flex items-center justify-between mb-1 gap-2"><div class="font-semibold" data-i18n="remTitle"></div><span id="remCount" class="lbl"></span></div>
+    <p class="lbl mb-2" data-i18n="remNote"></p>
+    <div class="scroll">
+      <table class="w-full" id="tblRem">
+        <thead><tr><th data-i18n="factory"></th><th data-i18n="machine"></th><th data-i18n="time"></th><th data-i18n="issue"></th><th data-i18n="colRemark"></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
   <section class="view panel p-3 hidden" data-view="log">
     <div class="flex items-center justify-between mb-2">
       <div class="font-semibold" data-i18n="logTitle"></div><span id="logCount" class="lbl"></span>
@@ -208,7 +249,7 @@
 /* ================== CONFIG ================== */
 // Paste your deployed Web App URL (…/exec). Leave empty to preview with demo data.
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxNht563H7COeUnwfF4NUImMsv3bFGoIpiHsE4h1tTrPFemxnskTOBsCw02zQ-ts7G8/exec';
-const APP_VERSION = 'v26-2026-11-07';
+const APP_VERSION = 'v27-2026-11-07';
 const MODEL_SORT_ASC = false;   // Model Summary tab: true = fewest -> most (as in the spec). false = most -> fewest   // shown under the title so you can tell which file is live
 const FACTORIES = ['Ayutthaya', 'Terahop 5000', 'Pinewave'];
 const FCOLOR = { 'Ayutthaya': '#2dd4bf', 'Terahop 5000': '#f59e0b', 'Pinewave': '#a78bfa' };
@@ -226,6 +267,15 @@ const I18N = {
     tH2b:'Cases per machine. Click a bar or a machine name to see that machine’s top 5 issues.',
     tH3:'Top 5 issues of this machine. The table lists every issue; › shows the dates and times.',
     tMachines:'Machines', colMachines:'Machines', colNum:'#', topNoteM:'Rank 1 = most frequent. Only issues that happened 2+ times on the same model are listed; ties share a rank.', topChartTitle:'Recurring issues per machine', topChartHint:'One bar per machine (cases of issues that repeat). Click a bar, or the › next to an issue in the table, to see the dates and times.', whenTip:'Show when it happened', colNo:'#', colDate:'Date', colClock:'Time of day', close:'Close', tabModel:'Model Summary', mAll:'All models', mBack:'← Back', mChart1:'Issues per model', mChart2:'Recurring issues in', mNoRec:'No issue occurred 2+ times in this model.', mChart3:'Issues on', mHint1:'Click a bar to see which issues keep repeating in that model.', mHint2:'Chart: issues that occurred 2+ times. Table: every issue, split by machine.', colMachine:'Machine', brand:'Brand', model:'Model', allB:'All brands', allMod:'All models', modelTitle:'Issues grouped by Brand + Model', modelNote:'All machines with the same brand and model are combined.', machinesWord:'machines', modelSortAsc:'Sorted ascending: fewest → most', modelSortDesc:'Sorted descending: most → fewest', repTitle:'Non-Standard Problem Report', repLog:'Issue log', rec:'Recurring issues (2+ times)', one:'One-off issues', generated:'Generated', nRec:'Recurring issue types', nOne:'One-off issues', dateRange:'Date', back:'← All machines', rankCol:'Rank', chartMachine:'Issues on', hintAll:'Click a bar to see the issues of that machine.', tabTop:'Top 3 Recurring', tabLog:'Issue Log',
+    tabDowntime:'Downtime', tabModules:'Machine Modules', tabRemarks:'Remarks',
+    dtTotal:'Total downtime', dtEvents:'Downtime events', dtAvg:'Average per event', dtLongest:'Longest event',
+    dtByModel:'Downtime by model (minutes)', dtByDay:'Downtime per day (minutes)', dtTblTitle:'Longest downtime events', colMin:'Minutes',
+    dtHint:'From the 维修总时间(min) column. Bars are split by factory. Rows with an error or a negative value are left out.',
+    dtEmpty:'No downtime data. Check that the 维修总时间(min) column has numbers.', dtSkipped:'rows left out (error / negative)',
+    modTitle:'Machine module history', modNote:'Built from the logged problems: a module runs from the first time it is logged on the machine until the last log before the next module. The date filter is not applied here.',
+    colModule:'Module', colFirst:'First logged', colLast:'Last logged', colEvents:'Events', colStatus:'Status', stCurrent:'Current', stChangedTo:'Changed to',
+    modMachines:'machines', modChanges:'module changes', modEmpty:'No module data yet (column 机种 / module).',
+    remTitle:'Remarks per machine', remNote:'Machines whose 备注 (remark) column has text. Text that only repeats the machine name is ignored.', remEmpty:'No remarks in this period.', colRemark:'Remark',
     topTitle:'Top 3 most recurring issues per machine', topNote:'Rank 1 = most frequent. Only issues that occurred 2+ times are listed; tied issues share the same rank.',
     issue:'Issue', times:'Times', logTitle:'Full issue log', time:'Time', solution:'Solution',
     saveTitle:'Save as image', saveChart:'Chart only', saveBoth:'Chart + table', yes:'Yes', exit:'Exit', imgBusy:'Creating the image…', imgFail:'Could not create the image. Try CSV or PDF instead.', dlPng:'⇩ Download PNG',
@@ -242,6 +292,15 @@ const I18N = {
     tH2b:'各机器的起数。点击柱子或机器名称，查看该机器的前5大问题。',
     tH3:'该机器的前5大问题。表格列出全部问题；点击 › 查看日期和时间。',
     tMachines:'机器', colMachines:'机器', colNum:'#', topNoteM:'名次1 = 发生最多。仅列出同一机型发生2次及以上的问题；并列的名次相同。', topChartTitle:'各机器的重复问题', topChartHint:'每台机器一根柱子（重复问题的起数）。点击柱子，或表格中问题旁的 ›，查看发生的日期和时间。', whenTip:'查看发生时间', colNo:'#', colDate:'日期', colClock:'时间', close:'关闭', tabModel:'机型排行', mAll:'全部机型', mBack:'← 返回', mChart1:'各机型问题数', mChart2:'重复问题：', mNoRec:'该机型没有发生2次及以上的问题。', mChart3:'问题统计：', mHint1:'点击柱子查看该机型的重复问题。', mHint2:'图表：发生2次及以上的问题。表格：全部问题，按机器分开。', colMachine:'机器', brand:'品牌', model:'机型', allB:'全部品牌', allMod:'全部机型', modelTitle:'按品牌 + 机型汇总的问题', modelNote:'相同品牌和机型的所有机器合并统计。', machinesWord:'台机器', modelSortAsc:'升序排列：由少到多', modelSortDesc:'降序排列：由多到少', repTitle:'非标准问题报告', repLog:'问题记录', rec:'重复发生的问题（2次及以上）', one:'仅发生一次的问题', generated:'生成时间', nRec:'重复问题种类', nOne:'单次问题', dateRange:'日期', back:'← 全部机器', rankCol:'名次', chartMachine:'问题统计：', hintAll:'点击柱子可查看该机器的问题。', tabTop:'重复问题前3', tabLog:'问题记录',
+    tabDowntime:'停机时间', tabModules:'机种履历', tabRemarks:'备注',
+    dtTotal:'停机总时间', dtEvents:'停机次数', dtAvg:'平均每次', dtLongest:'最长一次',
+    dtByModel:'各机型停机时间（分钟）', dtByDay:'每日停机时间（分钟）', dtTblTitle:'停机时间最长的记录', colMin:'分钟',
+    dtHint:'来自“维修总时间(min)”列。柱子按工厂分色。出错或为负数的行不计入。',
+    dtEmpty:'没有停机数据。请检查“维修总时间(min)”列是否有数字。', dtSkipped:'行未计入（错误/负数）',
+    modTitle:'机器机种履历', modNote:'根据问题记录推算：某机种从该机器第一次出现记录起，到下一个机种出现前的最后一次记录为止。此处不使用日期筛选。',
+    colModule:'机种', colFirst:'首次记录', colLast:'最后记录', colEvents:'记录数', colStatus:'状态', stCurrent:'当前', stChangedTo:'改为',
+    modMachines:'台机器', modChanges:'次机种更换', modEmpty:'暂无机种数据（机种列）。',
+    remTitle:'各机器备注', remNote:'“备注”列有内容的机器。仅重复机器名称的内容会被忽略。', remEmpty:'本期间没有备注。', colRemark:'备注',
     topTitle:'各机器重复发生最多的前3大问题', topNote:'名次1 = 发生最多。仅列出发生2次及以上的问题，并列的问题名次相同。',
     issue:'问题', times:'次数', logTitle:'完整问题记录', time:'时间', solution:'解决方法',
     saveTitle:'保存为图片', saveChart:'仅图表', saveBoth:'图表 + 表格', yes:'是', exit:'退出', imgBusy:'正在生成图片…', imgFail:'无法生成图片，请改用 CSV 或 PDF。', dlPng:'⇩ 下载 PNG',
@@ -253,7 +312,7 @@ let theme = localStorage.getItem('theme') || 'dark';
 const t = k => I18N[lang][k] || k;
 
 /* ================== STATE ================== */
-let DATA = [], NOMACH = [], chart = null, generatedAt = null, tab = 'overview';
+let DATA = [], NOMACH = [], HISTORY = [], dtChartInst = null, dtChart2Inst = null, chart = null, generatedAt = null, tab = 'overview';
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const mName = r => (lang === 'zh' && r.machineCn) ? r.machineCn : r.machineEn;
@@ -269,10 +328,10 @@ async function load() {
     else {
       const json = await (await fetch(GAS_URL)).json();
       if (!json.ok) throw new Error(json.error);
-      DATA = json.data.filter(r => !r.noMachine); NOMACH = json.data.filter(r => r.noMachine);   // machine = N/A: Issue Log only
+      DATA = json.data.filter(r => !r.noMachine); NOMACH = json.data.filter(r => r.noMachine); HISTORY = json.moduleHistory || [];   // machine = N/A: Issue Log only
       generatedAt = json.generatedAt; $('status').textContent = '';
     }
-  } catch (e) { DATA = []; NOMACH = []; $('status').textContent = t('error') + e.message; }
+  } catch (e) { DATA = []; NOMACH = []; HISTORY = []; $('status').textContent = t('error') + e.message; }
   buildFilters(); render();
 }
 
@@ -315,7 +374,7 @@ function filtered(withNoMachine) {                   // withNoMachine: also the 
 function render() {
   applyChrome();
   const rows = filtered();
-  renderCards(rows); renderChart(rows); renderTop(rows); renderModelTab(rows); renderLog(filtered(true));
+  renderCards(rows); renderChart(rows); renderTop(rows); renderModelTab(rows); renderDowntime(rows); renderModules(); renderRemarks(rows); renderLog(filtered(true));
 }
 function applyChrome() {
   document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
@@ -770,6 +829,115 @@ function renderModelTab(rows) {
   }).join('') || `<tr><td colspan="3" class="text-center lbl">${t('empty')}</td></tr>`;
 }
 
+/* ================== DOWNTIME / MODULES / REMARKS ================== */
+const dmy = ts => { const m = /^(\d{4})-(\d\d)-(\d\d)(?:T(\d\d):(\d\d))?/.exec(ts || ''); return m ? `${m[3]}/${m[2]}/${m[1]}${m[4] ? ' ' + m[4] + ':' + m[5] : ''}` : (ts || ''); };
+const natCmp = (a, b) => String(a).localeCompare(String(b), undefined, { numeric: true });
+const okMin = r => typeof r.repairMinutes === 'number' && r.repairMinutes >= 0;
+const hm = m => m >= 120 ? (m / 60).toFixed(1) + ' h' : Math.round(m) + ' min';
+
+function stackChart(old, canvasId, items, horizontal, o) {      // bars split by factory; items = [{ label, full, n, byF, tip }]
+  if (old) old.destroy();
+  const txt = css('--text'), grid = css('--line'), maxN = Math.max(1, ...items.map(i => i.n));
+  const facs = FACTORIES.filter(f => items.some(i => i.byF[f]));
+  const cat = { stacked: true, ticks: { autoSkip: !!o.skip, color: txt, maxRotation: o.skip ? 60 : 0, minRotation: 0 }, grid: { display: false } };
+  const val = { stacked: true, beginAtZero: true, suggestedMax: Math.ceil(maxN * 1.08), ticks: { color: txt }, grid: { color: grid } };
+  return new Chart($(canvasId), {
+    type: 'bar',
+    data: { labels: items.map(i => i.label),
+      datasets: facs.map(f => ({ label: f, data: items.map(i => i.byF[f] || 0), backgroundColor: FCOLOR[f], barThickness: horizontal ? 22 : undefined, maxBarThickness: 48, stack: 'm' })) },
+    options: { indexAxis: horizontal ? 'y' : 'x', responsive: true, maintainAspectRatio: false, color: txt,
+      plugins: { legend: { display: true, position: 'top', labels: { color: txt, boxWidth: 12, boxHeight: 12 } },
+        tooltip: { callbacks: { title: c => items[c[0].dataIndex].full || [].concat(items[c[0].dataIndex].label).join(' '), afterBody: c => items[c[0].dataIndex].tip || '' } } },
+      scales: horizontal ? { x: val, y: cat } : { x: cat, y: val } },
+    plugins: [...(o.labels ? [{ id: 'val', afterDatasetsDraw(c) { drawBarLabels(c, items, horizontal, txt); } }] : []),
+      { id: 'bg', beforeDraw(c) { const x = c.ctx; x.save(); x.globalCompositeOperation = 'destination-over'; x.fillStyle = css('--panel'); x.fillRect(0, 0, c.width, c.height); x.restore(); } }]
+  });
+}
+
+function renderDowntime(rows) {
+  const ok = rows.filter(okMin), skipped = rows.filter(r => typeof r.repairMinutes === 'number' && r.repairMinutes < 0).length;
+  $('dtTitle').textContent = t('dtByModel'); $('dtTitle2').textContent = t('dtByDay'); $('dtTblTitle').textContent = t('dtTblTitle');
+  $('dtHint').textContent = t('dtHint') + (skipped ? `  (${skipped} ${t('dtSkipped')})` : '');
+  if (dtChartInst) { dtChartInst.destroy(); dtChartInst = null; } if (dtChart2Inst) { dtChart2Inst.destroy(); dtChart2Inst = null; }
+  const body = $('tblDt').tBodies[0];
+  if (!ok.length) {
+    $('dtCards').innerHTML = ''; $('dtWrap').style.display = 'none'; $('dtWrap2').style.display = 'none';
+    body.innerHTML = `<tr><td colspan="5" class="text-center lbl">${esc(t('dtEmpty'))}</td></tr>`; return;
+  }
+  $('dtWrap').style.display = ''; $('dtWrap2').style.display = '';
+  const total = ok.reduce((a, r) => a + r.repairMinutes, 0), longest = Math.max(...ok.map(r => r.repairMinutes));
+  const card = (name, big, small, color) => `<div class="panel px-3 py-2" style="border-left:4px solid ${color}"><div class="lbl">${esc(name)}</div>
+    <div class="text-2xl font-bold leading-tight">${big}</div><div class="lbl">${small}</div></div>`;
+  $('dtCards').innerHTML = card(t('dtTotal'), (total / 60).toFixed(1) + '<span class="lbl ml-1">h</span>', `${Math.round(total)} min`, css('--accent'))
+    + card(t('dtEvents'), ok.length, t('cases'), css('--muted'))
+    + card(t('dtAvg'), Math.round(total / ok.length) + '<span class="lbl ml-1">min</span>', '', css('--muted'))
+    + card(t('dtLongest'), Math.round(longest) + '<span class="lbl ml-1">min</span>', hm(longest), '#ef4444');
+  // -- by model (horizontal, stacked by factory)
+  const bm = new Map();
+  ok.forEach(r => {
+    const key = r.modelNameEn || r.machineRaw || '-', a = bm.get(key) || { label: pick(r.modelNameEn, r.modelNameCn) || r.machineRaw || '-', n: 0, ev: 0, byF: {} };
+    a.n += r.repairMinutes; a.ev++; a.byF[r.factory] = (a.byF[r.factory] || 0) + r.repairMinutes; bm.set(key, a);
+  });
+  const items = [...bm.values()].sort((a, b) => b.n - a.n).slice(0, 15).map(a => {
+    Object.keys(a.byF).forEach(f => a.byF[f] = Math.round(a.byF[f]));
+    return { label: wrap(a.label, 26), full: a.label, n: Math.round(a.n), byF: a.byF, tip: `${a.ev} ${t('cases')} · ${t('dtAvg')}: ${Math.round(a.n / a.ev)} min` };
+  });
+  $('dtWrap').style.height = Math.max(220, items.length * 34 + 80) + 'px';
+  dtChartInst = stackChart(dtChartInst, 'dtChart', items, true, { labels: true });
+  // -- per day (columns, stacked by factory); empty days are filled in
+  const byDay = new Map();
+  ok.forEach(r => { const d = (r.timestamp || '').slice(0, 10); if (!d) return; const a = byDay.get(d) || {}; a[r.factory] = (a[r.factory] || 0) + r.repairMinutes; byDay.set(d, a); });
+  const days = [...byDay.keys()].sort(), list = [];
+  if (days.length) {
+    const t0 = Date.parse(days[0] + 'T00:00:00Z'), t1 = Date.parse(days[days.length - 1] + 'T00:00:00Z');
+    if ((t1 - t0) / 864e5 <= 150) for (let x = t0; x <= t1; x += 864e5) list.push(new Date(x).toISOString().slice(0, 10)); else days.forEach(d => list.push(d));
+  }
+  const ditems = list.map(d => { const a = byDay.get(d) || {}, byF = {}; let n = 0; Object.keys(a).forEach(f => { byF[f] = Math.round(a[f]); n += byF[f]; });
+    return { label: d.slice(8) + '/' + d.slice(5, 7), full: dmy(d), n, byF }; });
+  $('dtWrap2').style.height = '300px';
+  dtChart2Inst = stackChart(dtChart2Inst, 'dtChart2', ditems, false, { skip: true, labels: ditems.length <= 16 });
+  // -- table: longest events
+  body.innerHTML = [...ok].sort((a, b) => b.repairMinutes - a.repairMinutes).slice(0, 15).map(r => `<tr class="align-top">
+    <td class="whitespace-nowrap">${esc(dmy(r.timestamp))}</td><td class="whitespace-nowrap"><span class="dot" style="background:${FCOLOR[r.factory]}"></span>${esc(r.factory)}</td>
+    <td>${esc(mName(r))}</td><td>${esc(r.issueEn || r.issueRaw)}</td><td class="text-right font-semibold">${Math.round(r.repairMinutes)}</td></tr>`).join('');
+}
+
+function renderModules() {
+  const f = $('fFactory').value, m = $('fMachine').value, br = $('fBrand').value, mo = $('fModel').value;
+  const h = HISTORY.filter(r => (!f || r.factory === f) && (!m || r.machineKey === m) && (!br || r.brandEn === br) && (!mo || r.model === mo));
+  const groups = new Map();
+  h.forEach(r => { (groups.get(r.machineKey) || groups.set(r.machineKey, []).get(r.machineKey)).push(r); });
+  const gl = [...groups.values()].sort((a, b) => FACTORIES.indexOf(a[0].factory) - FACTORIES.indexOf(b[0].factory) || natCmp(a[0].machineRaw + ' ' + a[0].machineNo, b[0].machineRaw + ' ' + b[0].machineNo));
+  const changes = h.filter(r => !r.current).length;
+  $('modCount').textContent = `${gl.length} ${t('modMachines')} · ${changes} ${t('modChanges')}`;
+  $('tblMod').tBodies[0].innerHTML = gl.map((g, gi) => {
+    g.sort((a, b) => a.from < b.from ? -1 : 1);
+    return g.map((r, i) => `<tr class="${i === 0 ? 'grp' : ''} ${gi % 2 ? 'alt' : ''}">` +
+      (i === 0 ? `<td class="whitespace-nowrap" rowspan="${g.length}" style="vertical-align:top"><span class="dot" style="background:${FCOLOR[r.factory]}"></span>${esc(r.factory)}</td>
+        <td class="gname" rowspan="${g.length}">${esc(r.machineRaw + (r.machineNo ? ' ' + r.machineNo : ''))}</td>` : '') +
+      `<td>${esc(r.product)}</td><td class="whitespace-nowrap">${esc(dmy(r.from))}</td><td class="whitespace-nowrap">${esc(dmy(r.to))}</td><td class="text-right">${r.events}</td>
+       <td>${r.current ? `<b style="color:var(--accent)">${esc(t('stCurrent'))}</b>` : `<span class="lbl">${esc(t('stChangedTo'))}</span> ${esc(r.nextProduct)} <span class="lbl">· ${esc(dmy(r.changedAt))}</span>`}</td></tr>`).join('');
+  }).join('') || `<tr><td colspan="7" class="text-center lbl">${esc(t('modEmpty'))}</td></tr>`;
+}
+
+function renderRemarks(rows) {
+  const rr = rows.filter(r => r.remark).sort((a, b) => natCmp(a.factory + '|' + mName(a), b.factory + '|' + mName(b)) || (a.timestamp < b.timestamp ? -1 : 1));
+  const groups = new Map();
+  rr.forEach(r => { (groups.get(r.machineKey) || groups.set(r.machineKey, []).get(r.machineKey)).push(r); });
+  $('remCount').textContent = `${groups.size} ${t('modMachines')} · ${rr.length}`;
+  $('tblRem').tBodies[0].innerHTML = [...groups.values()].map((g, gi) => g.map((r, i) => `<tr class="align-top ${i === 0 ? 'grp' : ''} ${gi % 2 ? 'alt' : ''}">` +
+    (i === 0 ? `<td class="whitespace-nowrap" rowspan="${g.length}"><span class="dot" style="background:${FCOLOR[r.factory]}"></span>${esc(r.factory)}</td>
+      <td class="gname" rowspan="${g.length}">${esc(mName(r))}<div class="lbl" style="font-weight:400">${g.length}</div></td>` : '') +
+    `<td class="whitespace-nowrap">${esc(dmy(r.timestamp))}</td><td>${esc(r.issueEn || r.issueRaw)}</td><td>${esc(r.remark)}</td></tr>`).join('')).join('')
+    || `<tr><td colspan="5" class="text-center lbl">${esc(t('remEmpty'))}</td></tr>`;
+}
+
+function pageTitle() {                               // heading used in saved images / files
+  return { overview: () => $('chartTitle').textContent, top: () => $('topChartTitle').textContent, model: () => $('modelChartTitle').textContent,
+           downtime: () => t('tabDowntime') + ' – ' + t('dtByModel'), modules: () => t('modTitle'), remarks: () => t('remTitle'), log: () => t('logTitle') }[tab]();
+}
+const TABLE_ONLY = ['log', 'modules', 'remarks'];     // pages that have a table but no chart
+
 function renderLog(rows) {
   rows = [...rows].sort(byTimeAsc);                  // Issue Log: oldest -> newest
   $('logCount').textContent = `${rows.length} ${t('cases')}`;
@@ -788,6 +956,7 @@ function activeChart() {                             // the chart of the page th
   if (tab === 'overview') return { c: chart, title: $('chartTitle').textContent };
   if (tab === 'top') return { c: topChartInst, title: $('topChartTitle').textContent };
   if (tab === 'model') return { c: modelChartInst, title: $('modelChartTitle').textContent };
+  if (tab === 'downtime') return { c: dtChartInst, title: t('tabDowntime') + ' – ' + t('dtByModel') };
   return { c: null, title: '' };
 }
 let h2cP = null;
@@ -801,9 +970,9 @@ function loadH2C() {                                 // html2canvas is fetched o
   }));
 }
 function saveImage() {
-  const tb = { top: $('tblTop'), model: $('tblModel'), log: $('tblLog') }[tab];
+  const tb = { top: $('tblTop'), model: $('tblModel'), downtime: $('tblDt'), log: $('tblLog'), modules: $('tblMod'), remarks: $('tblRem') }[tab];
   if (!tb) return doSaveImage('chart');             // overview: chart only
-  if (tab === 'log') return doSaveImage('both');    // issue log: table only
+  if (TABLE_ONLY.includes(tab)) return doSaveImage('both');    // log / modules / remarks: table only
   $('saveDlg').showModal();                         // chart only, or chart + table
 }
 async function doSaveImage(mode) {                       // whole page of the tab: chart + every table row
@@ -812,7 +981,7 @@ async function doSaveImage(mode) {                       // whole page of the ta
   try {
     await loadH2C();
     const el = document.querySelector(`.view[data-view="${tab}"]`);
-    const title = tab === 'log' ? t('logTitle') : activeChart().title;
+    const title = pageTitle();
     const f = $('fFactory'), b = $('fBrand'), m = $('fModel'), s1 = $('fStart').value, e1 = $('fEnd').value;
     const sub = [f.selectedOptions[0].textContent, b.value ? b.selectedOptions[0].textContent : '', m.value ? m.selectedOptions[0].textContent : '',
                  (s1 || e1) ? `${s1 || '…'} – ${e1 || '…'}` : ''].filter(Boolean).join('  |  ') + '   ·   ' + new Date().toLocaleString(lang === 'zh' ? 'zh-CN' : 'en-GB');
@@ -867,7 +1036,7 @@ function tableRows(tb) {                             // table -> grid of text; r
   return g.map(r => Array.from(r, x => x ?? ''));
 }
 function reportData() {                              // chart data + table of the page the user is looking at
-  const { c, title } = activeChart(), chartRows = [], tb = { top: $('tblTop'), model: $('tblModel') }[tab];
+  const { c, title } = activeChart(), chartRows = [], tb = { top: $('tblTop'), model: $('tblModel'), downtime: $('tblDt'), modules: $('tblMod'), remarks: $('tblRem') }[tab];
   if (c) {
     const names = (tab === 'top' && topCtx.items.length === c.data.labels.length) ? topCtx.items.map(i => i.full)
                 : c.data.labels.map(l => Array.isArray(l) ? l.join(' ') : l);
@@ -876,7 +1045,7 @@ function reportData() {                              // chart data + table of th
     names.forEach((nm, i) => chartRows.push([nm, ...ds.map(d => d.data[i] ?? ''), ...(tot ? [ds.reduce((a, d) => a + (+d.data[i] || 0), 0)] : [])]));
   }
   const ds2 = c ? c.data.datasets.filter(d => Array.isArray(d.data) && d.label) : [];
-  return { c, title, chartRows, tableRows: tb ? tableRows(tb) : [], series: ds2.map(d => ({ label: d.label, bg: d.backgroundColor })),
+  return { c, title: title || pageTitle(), chartRows, tableRows: tb ? tableRows(tb) : [], series: ds2.map(d => ({ label: d.label, bg: d.backgroundColor })),
            horizontal: !!c && c.options.indexAxis === 'y', stacked: ds2.length > 1 };
 }
 function saveBlob(blob, name) {
@@ -981,7 +1150,7 @@ async function exportXLSX() {                        // .xlsx with an editable E
 $('btn-en').onclick = () => { lang = 'en'; localStorage.setItem('lang', lang); buildMachineOptions(); render(); };
 $('btn-zh').onclick = () => { lang = 'zh'; localStorage.setItem('lang', lang); buildMachineOptions(); render(); };
 $('btnTheme').onclick = () => { theme = theme === 'dark' ? 'light' : 'dark'; localStorage.setItem('theme', theme); render(); };
-document.querySelectorAll('.tab').forEach(b => b.onclick = () => { tab = b.dataset.tab; render(); if (tab === 'model' && modelChartInst) modelChartInst.resize(); if (tab === 'top' && topChartInst) topChartInst.resize(); });
+document.querySelectorAll('.tab').forEach(b => b.onclick = () => { tab = b.dataset.tab; render(); if (tab === 'model' && modelChartInst) modelChartInst.resize(); if (tab === 'top' && topChartInst) topChartInst.resize(); if (tab === 'downtime') { if (dtChartInst) dtChartInst.resize(); if (dtChart2Inst) dtChart2Inst.resize(); } });
 $('fFactory').onchange = () => { buildMachineOptions(); render(); };
 ['fMachine', 'fBrand', 'fModel', 'fStart', 'fEnd'].forEach(id => $(id).onchange = render);
 $('btnReset').onclick = () => { modelNav = { model: null }; topNav = { model: null, mode: null, machine: null }; ['fFactory', 'fMachine', 'fBrand', 'fModel', 'fStart', 'fEnd'].forEach(id => $(id).value = ''); buildMachineOptions(); render(); };
