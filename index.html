@@ -25,6 +25,9 @@
   td,th{padding:6px 10px}
   tbody tr{border-top:1px solid var(--line)}
   tbody tr:hover{background:var(--panel2)}
+  #tblDt tr.grp td{border-top:2px solid var(--muted)}
+  #tblDt tr.alt{background:color-mix(in srgb,var(--panel2) 55%,transparent)}
+  #tblDt td.gname{font-weight:600;vertical-align:top;width:30%}
   #tblTop tr.grp td{border-top:2px solid var(--muted)}   /* divider where a new machine starts */
   #tblTop tr.alt{background:color-mix(in srgb,var(--panel2) 55%,transparent)}   /* every other machine is tinted */
   .scroll{overflow-x:auto}                      /* no height cap: the whole page scrolls instead of a small box */
@@ -167,6 +170,10 @@
   </section>
 
   <section class="view panel p-3 hidden" data-view="downtime">
+    <div class="flex items-center gap-2 flex-wrap mb-2">
+      <button id="dBack" class="btn" style="display:none"></button>
+      <div id="dtCrumb" class="flex items-center gap-1 flex-wrap text-xs"></div>
+    </div>
     <div id="dtCards" class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3"></div>
     <div class="font-semibold" id="dtTitle"></div>
     <div class="lbl mb-1" id="dtHint"></div>
@@ -176,7 +183,7 @@
     <div class="font-semibold mb-1" id="dtTblTitle"></div>
     <div class="scroll">
       <table class="w-full" id="tblDt">
-        <thead><tr><th data-i18n="time"></th><th data-i18n="factory"></th><th data-i18n="machine"></th><th data-i18n="issue"></th><th class="text-right" data-i18n="colMin"></th></tr></thead>
+        <thead></thead>
         <tbody></tbody>
       </table>
     </div>
@@ -249,7 +256,7 @@
 /* ================== CONFIG ================== */
 // Paste your deployed Web App URL (…/exec). Leave empty to preview with demo data.
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxNht563H7COeUnwfF4NUImMsv3bFGoIpiHsE4h1tTrPFemxnskTOBsCw02zQ-ts7G8/exec';
-const APP_VERSION = 'v27-2026-11-07';
+const APP_VERSION = 'v28-2026-11-07';
 const MODEL_SORT_ASC = false;   // Model Summary tab: true = fewest -> most (as in the spec). false = most -> fewest   // shown under the title so you can tell which file is live
 const FACTORIES = ['Ayutthaya', 'Terahop 5000', 'Pinewave'];
 const FCOLOR = { 'Ayutthaya': '#2dd4bf', 'Terahop 5000': '#f59e0b', 'Pinewave': '#a78bfa' };
@@ -268,7 +275,10 @@ const I18N = {
     tH3:'Top 5 issues of this machine. The table lists every issue; › shows the dates and times.',
     tMachines:'Machines', colMachines:'Machines', colNum:'#', topNoteM:'Rank 1 = most frequent. Only issues that happened 2+ times on the same model are listed; ties share a rank.', topChartTitle:'Recurring issues per machine', topChartHint:'One bar per machine (cases of issues that repeat). Click a bar, or the › next to an issue in the table, to see the dates and times.', whenTip:'Show when it happened', colNo:'#', colDate:'Date', colClock:'Time of day', close:'Close', tabModel:'Model Summary', mAll:'All models', mBack:'← Back', mChart1:'Issues per model', mChart2:'Recurring issues in', mNoRec:'No issue occurred 2+ times in this model.', mChart3:'Issues on', mHint1:'Click a bar to see which issues keep repeating in that model.', mHint2:'Chart: issues that occurred 2+ times. Table: every issue, split by machine.', colMachine:'Machine', brand:'Brand', model:'Model', allB:'All brands', allMod:'All models', modelTitle:'Issues grouped by Brand + Model', modelNote:'All machines with the same brand and model are combined.', machinesWord:'machines', modelSortAsc:'Sorted ascending: fewest → most', modelSortDesc:'Sorted descending: most → fewest', repTitle:'Non-Standard Problem Report', repLog:'Issue log', rec:'Recurring issues (2+ times)', one:'One-off issues', generated:'Generated', nRec:'Recurring issue types', nOne:'One-off issues', dateRange:'Date', back:'← All machines', rankCol:'Rank', chartMachine:'Issues on', hintAll:'Click a bar to see the issues of that machine.', tabTop:'Top 3 Recurring', tabLog:'Issue Log',
     tabDowntime:'Downtime', tabModules:'Machine Modules', tabRemarks:'Remarks',
-    dtTotal:'Total downtime', dtEvents:'Downtime events', dtAvg:'Average per event', dtLongest:'Longest event',
+    dtTotal:'Total downtime', dtColTotal:'Total (min)', dtColAvg:'Avg (min)', dtColCases:'Cases',
+    dtPick1:'Click a bar or a model name to see its machines.', dtPick2:'Click a bar or a machine name to see that machine’s top 5 downtime issues.',
+    dtPick3:'Top 5 issues by downtime. Click a bar to list only its cases; click again to clear.',
+    dtT2:'Downtime per machine', dtT3:'Top 5 downtime issues', dtTblT2:'Top 5 downtime issues of each machine', dtTblT3:'Downtime events (longest first)', dtEvents:'Downtime events', dtAvg:'Average per event', dtLongest:'Longest event',
     dtByModel:'Downtime by model (minutes)', dtByDay:'Downtime per day (minutes)', dtTblTitle:'Longest downtime events', colMin:'Minutes',
     dtHint:'From the 维修总时间(min) column. Bars are split by factory. Rows with an error or a negative value are left out.',
     dtEmpty:'No downtime data. Check that the 维修总时间(min) column has numbers.', dtSkipped:'rows left out (error / negative)',
@@ -293,7 +303,10 @@ const I18N = {
     tH3:'该机器的前5大问题。表格列出全部问题；点击 › 查看日期和时间。',
     tMachines:'机器', colMachines:'机器', colNum:'#', topNoteM:'名次1 = 发生最多。仅列出同一机型发生2次及以上的问题；并列的名次相同。', topChartTitle:'各机器的重复问题', topChartHint:'每台机器一根柱子（重复问题的起数）。点击柱子，或表格中问题旁的 ›，查看发生的日期和时间。', whenTip:'查看发生时间', colNo:'#', colDate:'日期', colClock:'时间', close:'关闭', tabModel:'机型排行', mAll:'全部机型', mBack:'← 返回', mChart1:'各机型问题数', mChart2:'重复问题：', mNoRec:'该机型没有发生2次及以上的问题。', mChart3:'问题统计：', mHint1:'点击柱子查看该机型的重复问题。', mHint2:'图表：发生2次及以上的问题。表格：全部问题，按机器分开。', colMachine:'机器', brand:'品牌', model:'机型', allB:'全部品牌', allMod:'全部机型', modelTitle:'按品牌 + 机型汇总的问题', modelNote:'相同品牌和机型的所有机器合并统计。', machinesWord:'台机器', modelSortAsc:'升序排列：由少到多', modelSortDesc:'降序排列：由多到少', repTitle:'非标准问题报告', repLog:'问题记录', rec:'重复发生的问题（2次及以上）', one:'仅发生一次的问题', generated:'生成时间', nRec:'重复问题种类', nOne:'单次问题', dateRange:'日期', back:'← 全部机器', rankCol:'名次', chartMachine:'问题统计：', hintAll:'点击柱子可查看该机器的问题。', tabTop:'重复问题前3', tabLog:'问题记录',
     tabDowntime:'停机时间', tabModules:'机种履历', tabRemarks:'备注',
-    dtTotal:'停机总时间', dtEvents:'停机次数', dtAvg:'平均每次', dtLongest:'最长一次',
+    dtTotal:'停机总时间', dtColTotal:'合计(分钟)', dtColAvg:'平均(分钟)', dtColCases:'次数',
+    dtPick1:'点击柱子或机型名称，查看该机型的机器。', dtPick2:'点击柱子或机器名称，查看该机器停机时间最长的前5个问题。',
+    dtPick3:'停机时间最长的前5个问题。点击柱子只看该问题的记录；再点一次取消。',
+    dtT2:'各机器停机时间', dtT3:'停机时间最长的前5个问题', dtTblT2:'各机器停机时间最长的前5个问题', dtTblT3:'停机记录（时间最长在前）', dtEvents:'停机次数', dtAvg:'平均每次', dtLongest:'最长一次',
     dtByModel:'各机型停机时间（分钟）', dtByDay:'每日停机时间（分钟）', dtTblTitle:'停机时间最长的记录', colMin:'分钟',
     dtHint:'来自“维修总时间(min)”列。柱子按工厂分色。出错或为负数的行不计入。',
     dtEmpty:'没有停机数据。请检查“维修总时间(min)”列是否有数字。', dtSkipped:'行未计入（错误/负数）',
@@ -839,7 +852,7 @@ function stackChart(old, canvasId, items, horizontal, o) {      // bars split by
   if (old) old.destroy();
   const txt = css('--text'), grid = css('--line'), maxN = Math.max(1, ...items.map(i => i.n));
   const facs = FACTORIES.filter(f => items.some(i => i.byF[f]));
-  const cat = { stacked: true, ticks: { autoSkip: !!o.skip, color: txt, maxRotation: o.skip ? 60 : 0, minRotation: 0 }, grid: { display: false } };
+  const cat = { stacked: true, ticks: { autoSkip: !!o.skip, color: o.pick ? css('--accent') : txt, maxRotation: o.skip ? 60 : 0, minRotation: 0 }, grid: { display: false } };
   const val = { stacked: true, beginAtZero: true, suggestedMax: Math.ceil(maxN * 1.08), ticks: { color: txt }, grid: { color: grid } };
   return new Chart($(canvasId), {
     type: 'bar',
@@ -854,52 +867,157 @@ function stackChart(old, canvasId, items, horizontal, o) {      // bars split by
   });
 }
 
+/* one line per factory, the area under each line tinted in the factory colour */
+const rgba = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`; };
+function lineChart(old, canvasId, days, facs, byDay) {
+  if (old) old.destroy();
+  const txt = css('--text'), grid = css('--line');
+  return new Chart($(canvasId), {
+    type: 'line',
+    data: { labels: days.map(d => d.slice(8) + '/' + d.slice(5, 7)),
+      datasets: facs.map(f => ({ label: f, data: days.map(d => Math.round((byDay.get(d) || {})[f] || 0)), borderColor: FCOLOR[f], backgroundColor: rgba(FCOLOR[f], 0.22),
+        fill: 'origin', tension: 0.3, borderWidth: 2, pointRadius: days.length > 45 ? 0 : 3, pointHoverRadius: 5 })) },
+    options: { responsive: true, maintainAspectRatio: false, color: txt, interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { display: true, position: 'top', labels: { color: txt, boxWidth: 12, boxHeight: 12 } },
+        tooltip: { callbacks: { title: c => dmy(days[c[0].dataIndex]), footer: c => c.length > 1 ? t('total') + ': ' + c.reduce((a, x) => a + (x.parsed.y || 0), 0) : '' } } },
+      scales: { x: { ticks: { autoSkip: true, maxRotation: 60, color: txt }, grid: { display: false } }, y: { beginAtZero: true, ticks: { color: txt }, grid: { color: grid } } } },
+    plugins: [{ id: 'bg', beforeDraw(c) { const x = c.ctx; x.save(); x.globalCompositeOperation = 'destination-over'; x.fillStyle = css('--panel'); x.fillRect(0, 0, c.width, c.height); x.restore(); } }]
+  });
+}
+
+/* ---------- Downtime: model -> its machines -> one machine's top issues -> (optionally) one issue's cases ---------- */
+let dtNav = { model: null, machine: null, issue: null }, dtCtx = { items: [], horizontal: true, onPick: null };
+const sp1 = v => String(v || '').replace(/\s+/g, ' ').trim();
+const dtModelKey = r => r.modelNameEn || r.machineRaw || '-';
+const dtModelLabel = r => sp1(pick(r.modelNameEn, r.modelNameCn) || r.machineRaw || '-');
+const dtMachKey = r => numOf(r.machineNo) || ('x|' + r.machineEn);          // same machine number in different factories = one bar
+const dtIssueKey = r => r.issueEn || r.issueRaw || '-';
+function dtGroup(rows, keyFn, labelFn) {
+  const m = new Map();
+  rows.forEach(r => {
+    const k = keyFn(r), a = m.get(k) || { key: k, label: labelFn(r), factory: r.factory, n: 0, ev: 0, max: 0, byF: {}, machines: new Set(), issues: new Map() };
+    a.n += r.repairMinutes; a.ev++; a.max = Math.max(a.max, r.repairMinutes); a.byF[r.factory] = (a.byF[r.factory] || 0) + r.repairMinutes; a.machines.add(r.machineKey);
+    const ik = dtIssueKey(r), i = a.issues.get(ik) || { key: ik, label: sp1(pick(ik, r.issueCn)), n: 0, ev: 0, max: 0, byF: {} };
+    i.n += r.repairMinutes; i.ev++; i.max = Math.max(i.max, r.repairMinutes); i.byF[r.factory] = (i.byF[r.factory] || 0) + r.repairMinutes; a.issues.set(ik, i); m.set(k, a);
+  });
+  return [...m.values()];
+}
+function dtItem(a, label, wrapN, extra) {                    // chart bar: minutes per factory, tooltip with cases / total / average
+  const byF = {}; let n = 0;
+  Object.keys(a.byF).forEach(f => { byF[f] = Math.round(a.byF[f]); n += byF[f]; });
+  return { key: a.key, label: wrap(label, wrapN), full: label, n, byF,
+           tip: `${a.ev} ${t('cases')}${extra || ''} · ${t('dtColTotal')}: ${Math.round(a.n)} (${hm(a.n)}) · ${t('dtAvg')}: ${Math.round(a.n / a.ev)} min` };
+}
+function dtHit(ev) {                                           // a bar, or a name on the axis (Chart.js ignores clicks outside the plot area)
+  const ch = dtChartInst; if (!ch || !dtCtx.onPick) return null;
+  const r = ch.canvas.getBoundingClientRect(), a = ch.chartArea, x = ev.clientX - r.left, y = ev.clientY - r.top;
+  let i = -1;
+  if (dtCtx.horizontal && x < a.left && y >= a.top && y <= a.bottom) i = ch.scales.y.getValueForPixel(y);
+  else if (!dtCtx.horizontal && y > a.bottom && x >= a.left && x <= a.right) i = ch.scales.x.getValueForPixel(x);
+  if (i >= 0 && i < dtCtx.items.length) return dtCtx.items[i];
+  const els = ch.getElementsAtEventForMode(ev, 'nearest', { intersect: true }, false);
+  return els.length ? dtCtx.items[els[0].index] : null;
+}
+$('dtChart').addEventListener('click', ev => { const it = dtHit(ev); if (it) dtCtx.onPick(it); });
+$('dtChart').addEventListener('mousemove', ev => { $('dtChart').style.cursor = dtHit(ev) ? 'pointer' : 'default'; });
+
 function renderDowntime(rows) {
-  const ok = rows.filter(okMin), skipped = rows.filter(r => typeof r.repairMinutes === 'number' && r.repairMinutes < 0).length;
-  $('dtTitle').textContent = t('dtByModel'); $('dtTitle2').textContent = t('dtByDay'); $('dtTblTitle').textContent = t('dtTblTitle');
-  $('dtHint').textContent = t('dtHint') + (skipped ? `  (${skipped} ${t('dtSkipped')})` : '');
+  const okAll = rows.filter(okMin), skipped = rows.filter(r => typeof r.repairMinutes === 'number' && r.repairMinutes < 0).length;
   if (dtChartInst) { dtChartInst.destroy(); dtChartInst = null; } if (dtChart2Inst) { dtChart2Inst.destroy(); dtChart2Inst = null; }
   const body = $('tblDt').tBodies[0];
-  if (!ok.length) {
+  const headEvents = `<tr><th>${esc(t('time'))}</th><th>${esc(t('factory'))}</th><th>${esc(t('machine'))}</th><th>${esc(t('issue'))}</th><th class="text-right">${esc(t('colMin'))}</th></tr>`;
+  $('tblDt').tHead.innerHTML = headEvents;
+  if (!okAll.length) {
+    $('dtTitle').textContent = t('dtByModel'); $('dtTitle2').textContent = t('dtByDay'); $('dtTblTitle').textContent = t('dtTblTitle'); $('dtHint').textContent = '';
+    $('dBack').style.display = 'none'; $('dtCrumb').innerHTML = ''; dtCtx.onPick = null;
     $('dtCards').innerHTML = ''; $('dtWrap').style.display = 'none'; $('dtWrap2').style.display = 'none';
     body.innerHTML = `<tr><td colspan="5" class="text-center lbl">${esc(t('dtEmpty'))}</td></tr>`; return;
   }
-  $('dtWrap').style.display = ''; $('dtWrap2').style.display = '';
-  const total = ok.reduce((a, r) => a + r.repairMinutes, 0), longest = Math.max(...ok.map(r => r.repairMinutes));
+  // where are we? (reset the path when a filter removed what we were looking at)
+  let base = okAll;
+  if (dtNav.model) { const b = okAll.filter(r => dtModelKey(r) === dtNav.model); if (b.length) base = b; else dtNav = { model: null, machine: null, issue: null }; }
+  if (!dtNav.model) dtNav = { model: null, machine: null, issue: null };
+  if (dtNav.machine) { const b = base.filter(r => dtMachKey(r) === dtNav.machine); if (b.length) base = b; else dtNav.machine = dtNav.issue = null; }
+  if (dtNav.issue && !base.some(r => dtIssueKey(r) === dtNav.issue)) dtNav.issue = null;
+  const level = dtNav.machine ? 3 : dtNav.model ? 2 : 1;
+  const modelLbl = dtNav.model ? dtModelLabel(base[0]) : '';
+  const machLbl = dtNav.machine ? (numOf(base[0].machineNo) ? `${modelLbl} #${numOf(base[0].machineNo)}` : sp1(mName(base[0]))) : '';
+
+  // cards follow the current selection
+  const total = base.reduce((a, r) => a + r.repairMinutes, 0), longest = Math.max(...base.map(r => r.repairMinutes));
   const card = (name, big, small, color) => `<div class="panel px-3 py-2" style="border-left:4px solid ${color}"><div class="lbl">${esc(name)}</div>
     <div class="text-2xl font-bold leading-tight">${big}</div><div class="lbl">${small}</div></div>`;
   $('dtCards').innerHTML = card(t('dtTotal'), (total / 60).toFixed(1) + '<span class="lbl ml-1">h</span>', `${Math.round(total)} min`, css('--accent'))
-    + card(t('dtEvents'), ok.length, t('cases'), css('--muted'))
-    + card(t('dtAvg'), Math.round(total / ok.length) + '<span class="lbl ml-1">min</span>', '', css('--muted'))
+    + card(t('dtEvents'), base.length, t('cases'), css('--muted'))
+    + card(t('dtAvg'), Math.round(total / base.length) + '<span class="lbl ml-1">min</span>', '', css('--muted'))
     + card(t('dtLongest'), Math.round(longest) + '<span class="lbl ml-1">min</span>', hm(longest), '#ef4444');
-  // -- by model (horizontal, stacked by factory)
-  const bm = new Map();
-  ok.forEach(r => {
-    const key = r.modelNameEn || r.machineRaw || '-', a = bm.get(key) || { label: pick(r.modelNameEn, r.modelNameCn) || r.machineRaw || '-', n: 0, ev: 0, byF: {} };
-    a.n += r.repairMinutes; a.ev++; a.byF[r.factory] = (a.byF[r.factory] || 0) + r.repairMinutes; bm.set(key, a);
-  });
-  const items = [...bm.values()].sort((a, b) => b.n - a.n).slice(0, 15).map(a => {
-    Object.keys(a.byF).forEach(f => a.byF[f] = Math.round(a.byF[f]));
-    return { label: wrap(a.label, 26), full: a.label, n: Math.round(a.n), byF: a.byF, tip: `${a.ev} ${t('cases')} · ${t('dtAvg')}: ${Math.round(a.n / a.ev)} min` };
-  });
-  $('dtWrap').style.height = Math.max(220, items.length * 34 + 80) + 'px';
-  dtChartInst = stackChart(dtChartInst, 'dtChart', items, true, { labels: true });
-  // -- per day (columns, stacked by factory); empty days are filled in
+
+  // chart + table of the current level
+  const by = (a, b) => b.n - a.n || String(a.label).localeCompare(String(b.label), undefined, { numeric: true });
+  let items = [], title = '', hint = '', tblTitle = '', head = headEvents, html = '', crumb = '';
+  const root = `<button class="btn" data-dnav="root">${esc(t('mAll'))}</button>`, sep = '<span class="lbl">›</span>';
+  const facDots = (byF, show) => FACTORIES.filter(f => byF[f]).map(f => `<span class="dot" style="background:${FCOLOR[f]}"></span>${esc(f)}${show ? ' ' + Math.round(byF[f]) : ''}`).join(' &nbsp; ');
+  const evRow = r => `<tr class="align-top"><td class="whitespace-nowrap">${esc(dmy(r.timestamp))}</td>
+    <td class="whitespace-nowrap"><span class="dot" style="background:${FCOLOR[r.factory]}"></span>${esc(r.factory)}</td>
+    <td>${esc(mName(r))}</td><td>${esc(r.issueEn || r.issueRaw)}</td><td class="text-right font-semibold">${Math.round(r.repairMinutes)}</td></tr>`;
+
+  if (level === 1) {
+    const g = dtGroup(base, dtModelKey, dtModelLabel).sort(by);
+    items = g.map(a => dtItem(a, a.label, 26, ` · ${a.machines.size} ${t('machinesWord')}`));
+    const pickM = it => { dtNav = { model: it.key, machine: null, issue: null }; renderDowntime(filtered()); };
+    dtCtx = { items, horizontal: true, onPick: pickM };
+    title = t('dtByModel'); hint = t('dtHint') + (skipped ? `  (${skipped} ${t('dtSkipped')})` : '') + '  ' + t('dtPick1'); tblTitle = t('dtTblTitle');
+    html = [...base].sort((a, b) => b.repairMinutes - a.repairMinutes).slice(0, 15).map(evRow).join('');
+    crumb = root;
+  } else if (level === 2) {
+    const g = dtGroup(base, dtMachKey, r => numOf(r.machineNo) ? `${modelLbl} #${numOf(r.machineNo)}` : sp1(mName(r))).sort(by);
+    items = g.map(a => dtItem(a, a.label, 14, ` · ${a.machines.size} ${t('machinesWord')}`));
+    const pickMach = it => { dtNav = { model: dtNav.model, machine: it.key, issue: null }; renderDowntime(filtered()); };
+    dtCtx = { items, horizontal: false, onPick: pickMach };
+    const nMach = new Set(base.map(r => r.machineKey)).size;
+    title = `${t('dtT2')} · ${modelLbl}`; hint = `${nMach} ${t('machinesWord')} · ${t('dtAvg')}: ${Math.round(total / base.length)} min · ${t('dtPick2')}`; tblTitle = t('dtTblT2');
+    head = `<tr><th>${esc(t('machine'))}</th><th>${esc(t('issue'))}</th><th class="text-right">${esc(t('dtColCases'))}</th><th class="text-right">${esc(t('dtColTotal'))}</th><th class="text-right">${esc(t('dtColAvg'))}</th></tr>`;
+    g.forEach((m, gi) => {
+      const iss = [...m.issues.values()].sort(by).slice(0, 5), mu = Object.keys(m.byF).length > 1;
+      iss.forEach((i, idx) => {
+        html += `<tr class="${idx === 0 ? 'grp' : ''} ${gi % 2 ? 'alt' : ''}">` +
+          (idx === 0 ? `<td class="gname" rowspan="${iss.length}"><button class="lnk" data-dgo="machine" data-key="${esc(m.key)}">${esc(m.label)}</button>
+            <div class="lbl" style="font-weight:400">${facDots(m.byF, mu)}</div>
+            <div class="lbl" style="font-weight:400">${m.ev} ${t('cases')} · ${t('dtColTotal')} ${Math.round(m.n)} (${hm(m.n)}) · ${t('dtColAvg')} ${Math.round(m.n / m.ev)}</div></td>` : '') +
+          `<td>${esc(i.label)}</td><td class="text-right">${i.ev}</td><td class="text-right font-semibold">${Math.round(i.n)}</td><td class="text-right">${Math.round(i.n / i.ev)}</td></tr>`;
+      });
+    });
+    crumb = `${root}${sep}<span class="font-semibold px-1">${esc(modelLbl)}</span>`;
+  } else {
+    const iss = [...dtGroup(base, () => 'all', () => '')[0].issues.values()].sort(by).slice(0, 5);
+    items = iss.map(i => dtItem(i, i.label, 18));
+    const pickI = it => { dtNav.issue = dtNav.issue === it.key ? null : it.key; renderDowntime(filtered()); };
+    dtCtx = { items, horizontal: false, onPick: pickI };
+    const evs = dtNav.issue ? base.filter(r => dtIssueKey(r) === dtNav.issue) : base;
+    const issLbl = dtNav.issue ? items.concat(iss.map(i => dtItem(i, i.label, 99))).find(x => x.key === dtNav.issue) : null;
+    title = `${t('dtT3')} · ${machLbl}`; hint = t('dtPick3'); tblTitle = t('dtTblT3') + (issLbl ? ' · ' + issLbl.full : '');
+    html = [...evs].sort((a, b) => b.repairMinutes - a.repairMinutes).map(evRow).join('');
+    crumb = `${root}${sep}<button class="btn" data-dnav="model">${esc(modelLbl)}</button>${sep}` +
+      (issLbl ? `<button class="btn" data-dnav="machine">${esc(machLbl)}</button>${sep}<span class="font-semibold px-1">${esc(issLbl.full)}</span>` : `<span class="font-semibold px-1">${esc(machLbl)}</span>`);
+  }
+  $('dBack').textContent = t('mBack'); $('dBack').style.display = level === 1 && !dtNav.issue ? 'none' : '';
+  $('dtCrumb').innerHTML = crumb;
+  $('dtTitle').textContent = title; $('dtHint').textContent = hint; $('dtTblTitle').textContent = tblTitle;
+  $('tblDt').tHead.innerHTML = head; body.innerHTML = html;
+  $('dtWrap').style.display = ''; $('dtWrap').style.height = level === 1 ? Math.max(220, items.length * 34 + 80) + 'px' : '420px';
+  dtChartInst = stackChart(dtChartInst, 'dtChart', items, level === 1, { labels: true, pick: level < 3 || items.length > 0 });
+
+  // per day: one line per factory, area under each line tinted (follows the selection)
   const byDay = new Map();
-  ok.forEach(r => { const d = (r.timestamp || '').slice(0, 10); if (!d) return; const a = byDay.get(d) || {}; a[r.factory] = (a[r.factory] || 0) + r.repairMinutes; byDay.set(d, a); });
+  base.forEach(r => { const d = (r.timestamp || '').slice(0, 10); if (!d) return; const a = byDay.get(d) || {}; a[r.factory] = (a[r.factory] || 0) + r.repairMinutes; byDay.set(d, a); });
   const days = [...byDay.keys()].sort(), list = [];
   if (days.length) {
     const t0 = Date.parse(days[0] + 'T00:00:00Z'), t1 = Date.parse(days[days.length - 1] + 'T00:00:00Z');
-    if ((t1 - t0) / 864e5 <= 150) for (let x = t0; x <= t1; x += 864e5) list.push(new Date(x).toISOString().slice(0, 10)); else days.forEach(d => list.push(d));
+    if ((t1 - t0) / 864e5 <= 150) for (let x = t0; x <= t1; x += 864e5) list.push(new Date(x).toISOString().slice(0, 10)); else days.forEach(d => list.push(d));   // empty days count as 0
   }
-  const ditems = list.map(d => { const a = byDay.get(d) || {}, byF = {}; let n = 0; Object.keys(a).forEach(f => { byF[f] = Math.round(a[f]); n += byF[f]; });
-    return { label: d.slice(8) + '/' + d.slice(5, 7), full: dmy(d), n, byF }; });
-  $('dtWrap2').style.height = '300px';
-  dtChart2Inst = stackChart(dtChart2Inst, 'dtChart2', ditems, false, { skip: true, labels: ditems.length <= 16 });
-  // -- table: longest events
-  body.innerHTML = [...ok].sort((a, b) => b.repairMinutes - a.repairMinutes).slice(0, 15).map(r => `<tr class="align-top">
-    <td class="whitespace-nowrap">${esc(dmy(r.timestamp))}</td><td class="whitespace-nowrap"><span class="dot" style="background:${FCOLOR[r.factory]}"></span>${esc(r.factory)}</td>
-    <td>${esc(mName(r))}</td><td>${esc(r.issueEn || r.issueRaw)}</td><td class="text-right font-semibold">${Math.round(r.repairMinutes)}</td></tr>`).join('');
+  $('dtTitle2').textContent = t('dtByDay') + (dtNav.model ? ' · ' + (machLbl || modelLbl) : '');
+  $('dtWrap2').style.display = list.length ? '' : 'none'; $('dtWrap2').style.height = '320px';
+  if (list.length) dtChart2Inst = lineChart(dtChart2Inst, 'dtChart2', list, FACTORIES.filter(f => days.some(d => byDay.get(d)[f])), byDay);
 }
 
 function renderModules() {
@@ -934,7 +1052,7 @@ function renderRemarks(rows) {
 
 function pageTitle() {                               // heading used in saved images / files
   return { overview: () => $('chartTitle').textContent, top: () => $('topChartTitle').textContent, model: () => $('modelChartTitle').textContent,
-           downtime: () => t('tabDowntime') + ' – ' + t('dtByModel'), modules: () => t('modTitle'), remarks: () => t('remTitle'), log: () => t('logTitle') }[tab]();
+           downtime: () => t('tabDowntime') + ' – ' + $('dtTitle').textContent, modules: () => t('modTitle'), remarks: () => t('remTitle'), log: () => t('logTitle') }[tab]();
 }
 const TABLE_ONLY = ['log', 'modules', 'remarks'];     // pages that have a table but no chart
 
@@ -956,7 +1074,7 @@ function activeChart() {                             // the chart of the page th
   if (tab === 'overview') return { c: chart, title: $('chartTitle').textContent };
   if (tab === 'top') return { c: topChartInst, title: $('topChartTitle').textContent };
   if (tab === 'model') return { c: modelChartInst, title: $('modelChartTitle').textContent };
-  if (tab === 'downtime') return { c: dtChartInst, title: t('tabDowntime') + ' – ' + t('dtByModel') };
+  if (tab === 'downtime') return { c: dtChartInst, title: t('tabDowntime') + ' – ' + $('dtTitle').textContent };
   return { c: null, title: '' };
 }
 let h2cP = null;
@@ -991,7 +1109,7 @@ async function doSaveImage(mode) {                       // whole page of the ta
     const cv = await html2canvas(el, { backgroundColor: bg, scale, useCORS: true, logging: false, onclone: (doc, node) => {
       node.classList.remove('hidden');
       Object.assign(node.style, { padding: '16px', border: '0', background: bg, height: 'auto', maxHeight: 'none' });
-      if (tab === 'top' || tab === 'model') node.firstElementChild.style.display = 'none';          // back button + breadcrumb
+      if (tab === 'top' || tab === 'model' || tab === 'downtime') node.firstElementChild.style.display = 'none';          // back button + breadcrumb
       node.querySelectorAll('.go,.btn,#tBack,#mBack').forEach(x => x.style.display = 'none');
       if (mode === 'chart') node.querySelectorAll('table').forEach(x => (x.closest('.scroll') || x).style.display = 'none');
       node.querySelectorAll('.scroll').forEach(x => x.style.overflow = 'visible');
@@ -1153,10 +1271,17 @@ $('btnTheme').onclick = () => { theme = theme === 'dark' ? 'light' : 'dark'; loc
 document.querySelectorAll('.tab').forEach(b => b.onclick = () => { tab = b.dataset.tab; render(); if (tab === 'model' && modelChartInst) modelChartInst.resize(); if (tab === 'top' && topChartInst) topChartInst.resize(); if (tab === 'downtime') { if (dtChartInst) dtChartInst.resize(); if (dtChart2Inst) dtChart2Inst.resize(); } });
 $('fFactory').onchange = () => { buildMachineOptions(); render(); };
 ['fMachine', 'fBrand', 'fModel', 'fStart', 'fEnd'].forEach(id => $(id).onchange = render);
-$('btnReset').onclick = () => { modelNav = { model: null }; topNav = { model: null, mode: null, machine: null }; ['fFactory', 'fMachine', 'fBrand', 'fModel', 'fStart', 'fEnd'].forEach(id => $(id).value = ''); buildMachineOptions(); render(); };
+$('btnReset').onclick = () => { dtNav = { model: null, machine: null, issue: null }; modelNav = { model: null }; topNav = { model: null, mode: null, machine: null }; ['fFactory', 'fMachine', 'fBrand', 'fModel', 'fStart', 'fEnd'].forEach(id => $(id).value = ''); buildMachineOptions(); render(); };
 $('btnBack').onclick = () => { $('fMachine').value = ''; render(); };
 $('mBack').onclick = () => { modelNav = { model: null }; renderModelTab(filtered()); };
 $('modelCrumb').onclick = e => { if (e.target.closest('[data-nav]')) { modelNav = { model: null }; renderModelTab(filtered()); } };
+$('tblDt').onclick = e => { const g = e.target.closest('[data-dgo]'); if (!g) return; dtNav = { model: dtNav.model, machine: g.dataset.key, issue: null }; renderDowntime(filtered()); };
+$('dBack').onclick = () => { if (dtNav.issue) dtNav.issue = null; else if (dtNav.machine) dtNav.machine = null; else dtNav = { model: null, machine: null, issue: null }; renderDowntime(filtered()); };
+$('dtCrumb').onclick = e => {
+  const b = e.target.closest('[data-dnav]'); if (!b) return; const k = b.dataset.dnav;
+  dtNav = k === 'root' ? { model: null, machine: null, issue: null } : k === 'model' ? { model: dtNav.model, machine: null, issue: null } : { model: dtNav.model, machine: dtNav.machine, issue: null };
+  renderDowntime(filtered());
+};
 $('tblTop').onclick = e => {
   const w = e.target.closest('[data-when]'); if (w) { openWhen(+w.dataset.when); return; }
   const g = e.target.closest('[data-go]'); if (!g) return;
