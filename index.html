@@ -256,7 +256,7 @@
 /* ================== CONFIG ================== */
 // Paste your deployed Web App URL (…/exec). Leave empty to preview with demo data.
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxNht563H7COeUnwfF4NUImMsv3bFGoIpiHsE4h1tTrPFemxnskTOBsCw02zQ-ts7G8/exec';
-const APP_VERSION = 'v28-2026-11-07';
+const APP_VERSION = 'v29-2026-11-09';
 const MODEL_SORT_ASC = false;   // Model Summary tab: true = fewest -> most (as in the spec). false = most -> fewest   // shown under the title so you can tell which file is live
 const FACTORIES = ['Ayutthaya', 'Terahop 5000', 'Pinewave'];
 const FCOLOR = { 'Ayutthaya': '#2dd4bf', 'Terahop 5000': '#f59e0b', 'Pinewave': '#a78bfa' };
@@ -869,7 +869,7 @@ function stackChart(old, canvasId, items, horizontal, o) {      // bars split by
 
 /* one line per factory, the area under each line tinted in the factory colour */
 const rgba = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`; };
-function lineChart(old, canvasId, days, facs, byDay) {
+function lineChart(old, canvasId, days, facs, byDay, cnt) {
   if (old) old.destroy();
   const txt = css('--text'), grid = css('--line');
   return new Chart($(canvasId), {
@@ -879,7 +879,8 @@ function lineChart(old, canvasId, days, facs, byDay) {
         fill: 'origin', tension: 0.3, borderWidth: 2, pointRadius: days.length > 45 ? 0 : 3, pointHoverRadius: 5 })) },
     options: { responsive: true, maintainAspectRatio: false, color: txt, interaction: { mode: 'index', intersect: false },
       plugins: { legend: { display: true, position: 'top', labels: { color: txt, boxWidth: 12, boxHeight: 12 } },
-        tooltip: { callbacks: { title: c => dmy(days[c[0].dataIndex]), footer: c => c.length > 1 ? t('total') + ': ' + c.reduce((a, x) => a + (x.parsed.y || 0), 0) : '' } } },
+        tooltip: { callbacks: { title: c => dmy(days[c[0].dataIndex]),
+          label: c => c.dataset.label + ': ' + c.parsed.y + ' min' + (cnt ? ' · ' + ((cnt.get(days[c.dataIndex]) || {})[c.dataset.label] || 0) + ' ' + t('cases') : ''), footer: c => c.length > 1 ? t('total') + ': ' + c.reduce((a, x) => a + (x.parsed.y || 0), 0) : '' } } },
       scales: { x: { ticks: { autoSkip: true, maxRotation: 60, color: txt }, grid: { display: false } }, y: { beginAtZero: true, ticks: { color: txt }, grid: { color: grid } } } },
     plugins: [{ id: 'bg', beforeDraw(c) { const x = c.ctx; x.save(); x.globalCompositeOperation = 'destination-over'; x.fillStyle = css('--panel'); x.fillRect(0, 0, c.width, c.height); x.restore(); } }]
   });
@@ -940,21 +941,22 @@ function renderDowntime(rows) {
   if (dtNav.machine) { const b = base.filter(r => dtMachKey(r) === dtNav.machine); if (b.length) base = b; else dtNav.machine = dtNav.issue = null; }
   if (dtNav.issue && !base.some(r => dtIssueKey(r) === dtNav.issue)) dtNav.issue = null;
   const level = dtNav.machine ? 3 : dtNav.model ? 2 : 1;
+  const evBase = dtNav.issue ? base.filter(r => dtIssueKey(r) === dtNav.issue) : base;   // the selected issue's cases only (else everything selected)
   const modelLbl = dtNav.model ? dtModelLabel(base[0]) : '';
   const machLbl = dtNav.machine ? (numOf(base[0].machineNo) ? `${modelLbl} #${numOf(base[0].machineNo)}` : sp1(mName(base[0]))) : '';
 
   // cards follow the current selection
-  const total = base.reduce((a, r) => a + r.repairMinutes, 0), longest = Math.max(...base.map(r => r.repairMinutes));
+  const total = evBase.reduce((a, r) => a + r.repairMinutes, 0), longest = Math.max(...evBase.map(r => r.repairMinutes));
   const card = (name, big, small, color) => `<div class="panel px-3 py-2" style="border-left:4px solid ${color}"><div class="lbl">${esc(name)}</div>
     <div class="text-2xl font-bold leading-tight">${big}</div><div class="lbl">${small}</div></div>`;
   $('dtCards').innerHTML = card(t('dtTotal'), (total / 60).toFixed(1) + '<span class="lbl ml-1">h</span>', `${Math.round(total)} min`, css('--accent'))
-    + card(t('dtEvents'), base.length, t('cases'), css('--muted'))
-    + card(t('dtAvg'), Math.round(total / base.length) + '<span class="lbl ml-1">min</span>', '', css('--muted'))
+    + card(t('dtEvents'), evBase.length, t('cases'), css('--muted'))
+    + card(t('dtAvg'), Math.round(total / evBase.length) + '<span class="lbl ml-1">min</span>', '', css('--muted'))
     + card(t('dtLongest'), Math.round(longest) + '<span class="lbl ml-1">min</span>', hm(longest), '#ef4444');
 
   // chart + table of the current level
   const by = (a, b) => b.n - a.n || String(a.label).localeCompare(String(b.label), undefined, { numeric: true });
-  let items = [], title = '', hint = '', tblTitle = '', head = headEvents, html = '', crumb = '';
+  let items = [], title = '', hint = '', tblTitle = '', head = headEvents, html = '', crumb = '', issFullTxt = '';
   const root = `<button class="btn" data-dnav="root">${esc(t('mAll'))}</button>`, sep = '<span class="lbl">›</span>';
   const facDots = (byF, show) => FACTORIES.filter(f => byF[f]).map(f => `<span class="dot" style="background:${FCOLOR[f]}"></span>${esc(f)}${show ? ' ' + Math.round(byF[f]) : ''}`).join(' &nbsp; ');
   const evRow = r => `<tr class="align-top"><td class="whitespace-nowrap">${esc(dmy(r.timestamp))}</td>
@@ -995,6 +997,7 @@ function renderDowntime(rows) {
     dtCtx = { items, horizontal: false, onPick: pickI };
     const evs = dtNav.issue ? base.filter(r => dtIssueKey(r) === dtNav.issue) : base;
     const issLbl = dtNav.issue ? items.concat(iss.map(i => dtItem(i, i.label, 99))).find(x => x.key === dtNav.issue) : null;
+    issFullTxt = issLbl ? issLbl.full : '';
     title = `${t('dtT3')} · ${machLbl}`; hint = t('dtPick3'); tblTitle = t('dtTblT3') + (issLbl ? ' · ' + issLbl.full : '');
     html = [...evs].sort((a, b) => b.repairMinutes - a.repairMinutes).map(evRow).join('');
     crumb = `${root}${sep}<button class="btn" data-dnav="model">${esc(modelLbl)}</button>${sep}` +
@@ -1008,16 +1011,16 @@ function renderDowntime(rows) {
   dtChartInst = stackChart(dtChartInst, 'dtChart', items, level === 1, { labels: true, pick: level < 3 || items.length > 0 });
 
   // per day: one line per factory, area under each line tinted (follows the selection)
-  const byDay = new Map();
-  base.forEach(r => { const d = (r.timestamp || '').slice(0, 10); if (!d) return; const a = byDay.get(d) || {}; a[r.factory] = (a[r.factory] || 0) + r.repairMinutes; byDay.set(d, a); });
+  const byDay = new Map(), cntDay = new Map();
+  evBase.forEach(r => { const d = (r.timestamp || '').slice(0, 10); if (!d) return; const a = byDay.get(d) || {}, c = cntDay.get(d) || {}; a[r.factory] = (a[r.factory] || 0) + r.repairMinutes; c[r.factory] = (c[r.factory] || 0) + 1; byDay.set(d, a); cntDay.set(d, c); });
   const days = [...byDay.keys()].sort(), list = [];
   if (days.length) {
     const t0 = Date.parse(days[0] + 'T00:00:00Z'), t1 = Date.parse(days[days.length - 1] + 'T00:00:00Z');
     if ((t1 - t0) / 864e5 <= 150) for (let x = t0; x <= t1; x += 864e5) list.push(new Date(x).toISOString().slice(0, 10)); else days.forEach(d => list.push(d));   // empty days count as 0
   }
-  $('dtTitle2').textContent = t('dtByDay') + (dtNav.model ? ' · ' + (machLbl || modelLbl) : '');
+  $('dtTitle2').textContent = t('dtByDay') + (dtNav.model ? ' · ' + (machLbl || modelLbl) : '') + (issFullTxt ? ' · ' + issFullTxt : '');
   $('dtWrap2').style.display = list.length ? '' : 'none'; $('dtWrap2').style.height = '320px';
-  if (list.length) dtChart2Inst = lineChart(dtChart2Inst, 'dtChart2', list, FACTORIES.filter(f => days.some(d => byDay.get(d)[f])), byDay);
+  if (list.length) dtChart2Inst = lineChart(dtChart2Inst, 'dtChart2', list, FACTORIES.filter(f => days.some(d => byDay.get(d)[f])), byDay, cntDay);
 }
 
 function renderModules() {
