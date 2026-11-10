@@ -281,7 +281,7 @@
 /* ================== CONFIG ================== */
 // Paste your deployed Web App URL (…/exec). Leave empty to preview with demo data.
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxNht563H7COeUnwfF4NUImMsv3bFGoIpiHsE4h1tTrPFemxnskTOBsCw02zQ-ts7G8/exec';
-const APP_VERSION = 'v33-2026-11-10';
+const APP_VERSION = 'v34-2026-11-10';
 const MODEL_SORT_ASC = false;   // Model Summary tab: true = fewest -> most (as in the spec). false = most -> fewest   // shown under the title so you can tell which file is live
 const FACTORIES = ['Ayutthaya', 'Terahop 5000', 'Pinewave'];
 const FCOLOR = { 'Ayutthaya': '#2dd4bf', 'Terahop 5000': '#f59e0b', 'Pinewave': '#a78bfa' };
@@ -309,7 +309,7 @@ const I18N = {
     dtEmpty:'No downtime data. Check that the 维修总时间(min) column has numbers.', dtSkipped:'rows left out (error / negative)',
     modTitle:'Machine module history', modNote:'Built from the logged problems: a module runs from the first time it is logged on the machine until the last log before the next module. The date filter is not applied here.',
     colModule:'Module', colFirst:'First logged', colLast:'Last logged', colEvents:'Events', colStatus:'Status', stCurrent:'Current', stChangedTo:'Changed to',
-    modMachines:'machines', modChanges:'module changes', modNotSet:'Not set', modViewCards:'Cards', modViewTable:'Table', modLvB:'brand', modLvM:'model', modLvV:'version', modLvK:'machine', modPick:'Choose', modNow:'Running now', modSince:'since', modLastLog:'last logged', modLogs:'logs', modFirst:'first logged', modTlTitle:'Module changes', modNoChange:'No module change logged yet.', modDateNote:'Dates come from the repair logs: a module is dated from the first log that mentions it, so the real change may be a little earlier.', modEmpty:'No module data yet (column 机种 / module).',
+    modMachines:'machines', modChanges:'module changes', modNotSet:'Not set', modNotRec:'Not recorded', modNoModNote:'No module (机种) was written in the problem logs of this machine, so what it produces is unknown. Fill the 机种 column in the sheet.', modViewCards:'Cards', modViewTable:'Table', modLvB:'brand', modLvM:'model', modLvV:'version', modLvK:'machine', modPick:'Choose', modNow:'Running now', modSince:'since', modLastLog:'last logged', modLogs:'logs', modFirst:'first logged', modTlTitle:'Module changes', modNoChange:'No module change logged yet.', modDateNote:'Dates come from the repair logs: a module is dated from the first log that mentions it, so the real change may be a little earlier.', modEmpty:'No module data yet (column 机种 / module).',
     remTitle:'Remarks per machine', remNote:'Machines whose 备注 (remark) column has text. Text that only repeats the machine name is ignored.', remEmpty:'No remarks in this period.', colRemark:'Remark',
     topTitle:'Top 3 most recurring issues per machine', topNote:'Rank 1 = most frequent. Only issues that occurred 2+ times are listed; tied issues share the same rank.',
     issue:'Issue', times:'Times', logTitle:'Full issue log', time:'Time', solution:'Solution',
@@ -337,7 +337,7 @@ const I18N = {
     dtEmpty:'没有停机数据。请检查“维修总时间(min)”列是否有数字。', dtSkipped:'行未计入（错误/负数）',
     modTitle:'机器机种履历', modNote:'根据问题记录推算：某机种从该机器第一次出现记录起，到下一个机种出现前的最后一次记录为止。此处不使用日期筛选。',
     colModule:'机种', colFirst:'首次记录', colLast:'最后记录', colEvents:'记录数', colStatus:'状态', stCurrent:'当前', stChangedTo:'改为',
-    modMachines:'台机器', modChanges:'次机种更换', modNotSet:'未设置', modViewCards:'卡片', modViewTable:'表格', modLvB:'品牌', modLvM:'机型', modLvV:'版本', modLvK:'机台', modPick:'请选择', modNow:'当前机种', modSince:'自', modLastLog:'最后记录', modLogs:'条记录', modFirst:'首次记录', modTlTitle:'机种更换记录', modNoChange:'暂无机种更换记录。', modDateNote:'日期来自维修记录：机种以首次出现该机种的记录日期为准，实际更换可能稍早。', modEmpty:'暂无机种数据（机种列）。',
+    modMachines:'台机器', modChanges:'次机种更换', modNotSet:'未设置', modNotRec:'未记录', modNoModNote:'该机器的问题记录中没有填写机种，因此不知道它在生产什么。请在表格的机种列补充。', modViewCards:'卡片', modViewTable:'表格', modLvB:'品牌', modLvM:'机型', modLvV:'版本', modLvK:'机台', modPick:'请选择', modNow:'当前机种', modSince:'自', modLastLog:'最后记录', modLogs:'条记录', modFirst:'首次记录', modTlTitle:'机种更换记录', modNoChange:'暂无机种更换记录。', modDateNote:'日期来自维修记录：机种以首次出现该机种的记录日期为准，实际更换可能稍早。', modEmpty:'暂无机种数据（机种列）。',
     remTitle:'各机器备注', remNote:'“备注”列有内容的机器。仅重复机器名称的内容会被忽略。', remEmpty:'本期间没有备注。', colRemark:'备注',
     topTitle:'各机器重复发生最多的前3大问题', topNote:'名次1 = 发生最多。仅列出发生2次及以上的问题，并列的问题名次相同。',
     issue:'问题', times:'次数', logTitle:'完整问题记录', time:'时间', solution:'解决方法',
@@ -1061,7 +1061,7 @@ function renderModules() {
     return g.map((r, i) => `<tr class="${i === 0 ? 'grp' : ''} ${gi % 2 ? 'alt' : ''}">` +
       (i === 0 ? `<td class="whitespace-nowrap" rowspan="${g.length}" style="vertical-align:top"><span class="dot" style="background:${FCOLOR[r.factory]}"></span>${esc(r.factory)}</td>
         <td class="gname" rowspan="${g.length}">${esc(r.machineRaw + (r.machineNo ? ' ' + r.machineNo : ''))}</td>` : '') +
-      `<td>${esc(r.product)}</td><td class="whitespace-nowrap">${esc(dmy(r.from))}</td><td class="whitespace-nowrap">${esc(dmy(r.to))}</td><td class="text-right">${r.events}</td>
+      `<td>${esc(r.product || t('modNotRec'))}</td><td class="whitespace-nowrap">${esc(dmy(r.from))}</td><td class="whitespace-nowrap">${esc(dmy(r.to))}</td><td class="text-right">${r.events}</td>
        <td>${r.current ? `<b style="color:var(--accent)">${esc(t('stCurrent'))}</b>` : `<span class="lbl">${esc(t('stChangedTo'))}</span> ${esc(r.nextProduct)} <span class="lbl">· ${esc(dmy(r.changedAt))}</span>`}</td></tr>`).join('');
   }).join('') || `<tr><td colspan="7" class="text-center lbl">${esc(t('modEmpty'))}</td></tr>`;
 }
@@ -1133,7 +1133,7 @@ function renderModuleCards() {
     return;
   }
   const mcard = x => `<button class="mcard ${x.key === modNav.k ? 'on' : ''}" data-mk="${esc(x.key)}"><div class="mt"><span class="dot" style="background:${FCOLOR[x.factory]}"></span>${esc(x.raw + (x.no ? ' ' + x.no : ''))}</div>
-      <div class="ms">${esc(x.factory)}</div><div class="mcur">${esc(t('modNow'))}: <b>${esc(x.cur.product)}</b><div class="ms">${esc(t('modSince'))} ${esc(dmy(x.cur.from))}</div></div>
+      <div class="ms">${esc(x.factory)}</div><div class="mcur">${esc(t('modNow'))}: <b>${esc(x.cur.product || t('modNotRec'))}</b><div class="ms">${esc(t('modSince'))} ${esc(dmy(x.cur.from))}</div></div>
       <div class="ms">${x.changes} ${esc(t('modChanges'))}</div></button>`;
   const cols = new Map();                                                   // same machine number = same column, one factory per row
   ms.forEach(x => { const nk = String(x.no || '').replace(/#/g, '').trim(); (cols.get(nk) || cols.set(nk, []).get(nk)).push(x); });
@@ -1143,14 +1143,14 @@ function renderModuleCards() {
   const sel = ms.find(x => x.key === modNav.k);
   if (!sel) { $('modDetail').innerHTML = ''; return; }
   const tl = [...sel.ps].map((p, i) => ({ p, i })).reverse().map(({ p, i }) => {      // newest first
-    const what = i === 0 ? `<b>${esc(p.product)}</b> <span class="lbl">(${esc(t('modFirst'))})</span>` : `${esc(sel.ps[i - 1].product)} → <b>${esc(p.product)}</b>`;
+    const what = i === 0 ? `<b>${esc(p.product || t('modNotRec'))}</b> <span class="lbl">(${esc(t('modFirst'))})</span>` : `${esc(sel.ps[i - 1].product || t('modNotRec'))} → <b>${esc(p.product || t('modNotRec'))}</b>`;
     return `<li class="${p.current ? 'cur' : ''}"><b>${esc(dmy(p.from))}</b> — ${what}<div class="lbl">${esc(dmy(p.from))} → ${esc(dmy(p.to))} · ${p.events} ${esc(t('modLogs'))}${p.current ? ' · ' + esc(t('modNow')) : ''}</div></li>`;
   }).join('');
   $('modDetail').innerHTML = `<div class="mdet"><div class="font-semibold"><span class="dot" style="background:${FCOLOR[sel.factory]}"></span>${esc(sel.factory)} · ${esc(sel.raw + (sel.no ? ' ' + sel.no : ''))}</div>
     <div class="lbl">${esc([pick(sel.brandEn, sel.brandCn), pick(sel.fnEn, sel.fnCn), sel.ver].filter(Boolean).join(' · '))}</div>
-    <div class="mcur">${esc(t('modNow'))}: <b>${esc(sel.cur.product)}</b> <span class="lbl">${esc(t('modSince'))} ${esc(dmy(sel.cur.from))} · ${esc(t('modLastLog'))} ${esc(dmy(sel.cur.to))}</span></div>
+    <div class="mcur">${esc(t('modNow'))}: <b>${esc(sel.cur.product || t('modNotRec'))}</b> <span class="lbl">${esc(t('modSince'))} ${esc(dmy(sel.cur.from))} · ${esc(t('modLastLog'))} ${esc(dmy(sel.cur.to))}</span></div>
     <div class="font-semibold">${esc(t('modTlTitle'))} (${sel.changes})</div>
-    ${sel.changes ? '' : `<div class="lbl">${esc(t('modNoChange'))}</div>`}<ul class="mtl">${tl}</ul><div class="lbl mt-2">${esc(t('modDateNote'))}</div></div>`;
+    ${sel.changes ? '' : `<div class="lbl">${esc(t('modNoChange'))}</div>`}<ul class="mtl">${tl}</ul><div class="lbl mt-2">${esc(sel.cur.product ? t('modDateNote') : t('modNoModNote'))}</div></div>`;
 }
 $('modVCards').onclick = () => { modView = 'cards'; applyModView(); };
 $('modVTable').onclick = () => { modView = 'table'; applyModView(); };
