@@ -281,7 +281,7 @@
 /* ================== CONFIG ================== */
 // Paste your deployed Web App URL (…/exec). Leave empty to preview with demo data.
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxNht563H7COeUnwfF4NUImMsv3bFGoIpiHsE4h1tTrPFemxnskTOBsCw02zQ-ts7G8/exec';
-const APP_VERSION = 'v32-2026-11-10';
+const APP_VERSION = 'v33-2026-11-10';
 const MODEL_SORT_ASC = false;   // Model Summary tab: true = fewest -> most (as in the spec). false = most -> fewest   // shown under the title so you can tell which file is live
 const FACTORIES = ['Ayutthaya', 'Terahop 5000', 'Pinewave'];
 const FCOLOR = { 'Ayutthaya': '#2dd4bf', 'Terahop 5000': '#f59e0b', 'Pinewave': '#a78bfa' };
@@ -1069,6 +1069,8 @@ function renderModules() {
 // ---- Machine Modules as step-by-step cards: brand > model > version > machine, then that machine's module history ----
 let modNav = { b: null, m: null, v: null, k: null }, modView = 'cards', modLvl = 0, modSkipped = {};
 const MOD_KEYS = ['b', 'm', 'v', 'k'];
+const MOD_FAC = ['Terahop 5000', 'Ayutthaya', 'Pinewave'];       // factory order on the Machine Modules page only (the rest of the site keeps FACTORIES)
+const modFi = f => { const i = MOD_FAC.indexOf(f); return i < 0 ? 99 : i; };
 const MOD_VAL = {
   b: x => ({ key: x.brandEn, label: pick(x.brandEn, x.brandCn) || t('modNotSet') }),
   m: x => ({ key: x.fnEn, label: pick(x.fnEn, x.fnCn) || t('modNotSet') }),          // model = machine type / function (ISO, COVER, ...)
@@ -1085,9 +1087,9 @@ function modMachines() {                                                    // s
     const r0 = ps[0], d = dr.get(key) || {};
     return { key, factory: r0.factory, raw: r0.machineRaw, no: r0.machineNo, brandEn: r0.brandEn || '', brandCn: r0.brandCn || '',
       fnEn: d.functionEn || '', fnCn: d.functionCn || '', ver: r0.model || '', ps, cur: ps[ps.length - 1], changes: ps.length - 1 };
-  }).sort((a, b) => FACTORIES.indexOf(a.factory) - FACTORIES.indexOf(b.factory) || natCmp(a.raw + ' ' + a.no, b.raw + ' ' + b.no));
+  }).sort((a, b) => modFi(a.factory) - modFi(b.factory) || natCmp(a.raw + ' ' + a.no, b.raw + ' ' + b.no));
 }
-const facDots = list => FACTORIES.filter(f => list.has(f)).map(f => `<span class="dot" style="background:${FCOLOR[f]};margin-right:4px" title="${esc(f)}" aria-label="${esc(f)}"></span>`).join('');
+const facDots = list => MOD_FAC.filter(f => list.has(f)).map(f => `<span class="dot" style="background:${FCOLOR[f]};margin-right:4px" title="${esc(f)}" aria-label="${esc(f)}"></span>`).join('');
 function applyModView() {
   $('modCardsWrap').style.display = modView === 'cards' ? '' : 'none';
   $('modTableWrap').style.display = modView === 'table' ? '' : 'none';
@@ -1119,7 +1121,7 @@ function renderModuleCards() {
   $('modCrumb').innerHTML = crumb;
   $('modBack').textContent = t('mBack'); $('modBack').style.display = (lvl > 0 && Object.keys(modNav).some(k => modNav[k] !== null && !modSkipped[MOD_KEYS.indexOf(k)])) ? '' : 'none';
   const present = new Set(ms.map(x => x.factory));
-  $('modHint').innerHTML = esc(`${t('modPick')}: ${names[MOD_KEYS[lvl]]}`) + ' <span style="margin-left:12px">' + FACTORIES.filter(f => present.has(f)).map(f => `<span class="dot" style="background:${FCOLOR[f]}"></span>${esc(f)}`).join('&nbsp;&nbsp; ') + '</span>';
+  $('modHint').innerHTML = esc(`${t('modPick')}: ${names[MOD_KEYS[lvl]]}`) + ' <span style="margin-left:12px">' + MOD_FAC.filter(f => present.has(f)).map(f => `<span class="dot" style="background:${FCOLOR[f]}"></span>${esc(f)}`).join('&nbsp;&nbsp; ') + '</span>';
   if (!ms.length) { $('modGrid').innerHTML = `<div class="lbl">${esc(t('modEmpty'))}</div>`; $('modDetail').innerHTML = ''; return; }
   $('modGrid').className = 'mgrid';
   if (lvl < 3) {                                                            // brand / model / version cards
@@ -1137,7 +1139,7 @@ function renderModuleCards() {
   ms.forEach(x => { const nk = String(x.no || '').replace(/#/g, '').trim(); (cols.get(nk) || cols.set(nk, []).get(nk)).push(x); });
   $('modGrid').className = 'mgrid mcols';
   $('modGrid').innerHTML = [...cols.keys()].sort(natCmp).map(nk => `<div class="mcol">` +
-    cols.get(nk).sort((a, b) => FACTORIES.indexOf(a.factory) - FACTORIES.indexOf(b.factory) || natCmp(a.raw, b.raw)).map(mcard).join('') + `</div>`).join('');
+    cols.get(nk).sort((a, b) => modFi(a.factory) - modFi(b.factory) || natCmp(a.raw, b.raw)).map(mcard).join('') + `</div>`).join('');
   const sel = ms.find(x => x.key === modNav.k);
   if (!sel) { $('modDetail').innerHTML = ''; return; }
   const tl = [...sel.ps].map((p, i) => ({ p, i })).reverse().map(({ p, i }) => {      // newest first
