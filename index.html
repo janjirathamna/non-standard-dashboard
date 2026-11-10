@@ -85,6 +85,10 @@
     #report .kpi{border:1px solid #bbb;border-radius:4px;padding:4px 10px}
     #report .kpi b{font-size:15px;display:block}
     #report img{width:100%;height:auto;display:block;break-inside:avoid}
+    #report img.c{width:auto;max-width:100%;max-height:230mm;margin:4px auto}
+    #report h2.pg{break-before:page;font-size:15px}
+    #report h3{font-size:11px;font-weight:700;margin:10px 0 4px}
+    #report .sec1{break-before:auto!important}
     #report table{width:100%;border-collapse:collapse;font-size:9.5px}
     #report th{background:#e9ecef!important;color:#111;position:static;border:1px solid #bbb;padding:3px 5px}
     #report td{border:1px solid #ccc;padding:3px 5px;vertical-align:top}
@@ -114,7 +118,6 @@
       <button id="btnTheme" class="btn" title="Theme">◐</button>
       <button id="btnPng" class="btn" data-i18n="saveImg"></button>
       <button id="btnCsv" class="btn" title="CSV">⇩ CSV</button>
-      <button id="btnXlsx" class="btn" title="Excel (editable chart + data + table)">⇩ XLSX</button>
       <button id="btnPrint" class="btn" title="PDF">⎙ PDF</button>
     </div>
   </div>
@@ -541,7 +544,34 @@ function chartImage(rows) {                          // render the current chart
   return { url, title: m.title };
 }
 
+const PDF_TABS = ['overview', 'top', 'model', 'downtime', 'modules', 'remarks'];     // Overview exports all of these + the issue log
+const PDF_TBL = { top: 'tblTop', model: 'tblModel', downtime: 'tblDt', modules: 'tblMod', remarks: 'tblRem' };
+const PDF_NAME = { overview: 'tabOverview', top: 'tabTop', model: 'tabModel', downtime: 'tabDowntime', modules: 'tabModules', remarks: 'tabRemarks', log: 'tabLog' };
+function gridHtml(tb) {                              // a page table -> clean print table (header rows kept, merged cells repeated)
+  const g = tableRows(tb).map(r => r.map(c => String(c).replace(/^\s*\|\s*/, '').replace(/\s\|\s/g, ' · ')));
+  const hn = tb.tHead ? tb.tHead.rows.length : 0;
+  if (g.length <= hn) return '';
+  const row = (r, tag) => '<tr>' + r.map(c => `<${tag}>${esc(c)}</${tag}>`).join('') + '</tr>';
+  return '<table><thead>' + g.slice(0, hn).map(r => row(r, 'th')).join('') + '</thead><tbody>' + g.slice(hn).map(r => row(r, 'td')).join('') + '</tbody></table>';
+}
+function snapTab(name) {                             // show one page (light theme, no animation), grab its chart(s) + table
+  tab = name; render();
+  [modelChartInst, topChartInst, dtChartInst, dtChart2Inst].forEach(c => { if (c && c.resize) c.resize(); });
+  const { c, title } = activeChart(), imgs = [];
+  if (c) imgs.push({ title, url: c.toBase64Image('image/png', 1) });
+  if (name === 'downtime' && dtChart2Inst && $('dtWrap2').style.display !== 'none') imgs.push({ title: $('dtTitle2').textContent, url: dtChart2Inst.toBase64Image('image/png', 1) });
+  return { name, imgs, table: PDF_TBL[name] ? gridHtml($(PDF_TBL[name])) : '' };
+}
+
 function buildReport() {
+  const prevTab = tab, prevTheme = theme, prevAnim = Chart.defaults.animation;
+  const names = prevTab === 'overview' ? PDF_TABS.filter(n => n !== 'overview') : (PDF_TBL[prevTab] ? [prevTab] : []);
+  let snaps = [];
+  Chart.defaults.animation = false; theme = 'light';   // charts are drawn with dark text for paper
+  try { snaps = names.map(snapTab); } catch (e) { console.error(e); }
+  theme = prevTheme; tab = prevTab; Chart.defaults.animation = prevAnim; render();
+  [modelChartInst, topChartInst, dtChartInst, dtChart2Inst].forEach(c => { if (c && c.resize) c.resize(); });
+
   const rows = filtered();
   const cnt = new Map();                              // recurrence = same machine + same issue, 2+ times
   const kOf = r => r.machineKey + '||' + (r.issueEn || r.issueRaw || '-');
@@ -566,22 +596,30 @@ function buildReport() {
     <td class="n">${cnt.get(kOf(r))}</td></tr>`;
   const band = (cls, label, n) => n ? `<tr class="band ${cls}"><td colspan="6">${esc(label)} — ${n} ${t('cases')}</td></tr>` : '';
 
+
+  const showLog = prevTab === 'overview' || prevTab === 'log';        // issue log: on Overview (everything) and on its own page
   const img = chartImage(rows);
-  $('report').innerHTML = `
-    <h1>${esc(t('repTitle'))}</h1>
-    <div class="meta">${esc(filt)}</div>
-    <div class="meta">${esc(t('generated'))}: ${new Date().toLocaleString(lang === 'zh' ? 'zh-CN' : 'en-GB')}</div>
-    <div class="kpis">
-      <div class="kpi"><b>${rows.length}</b>${esc(t('total'))}</div>
-      <div class="kpi"><b>${recTypes}</b>${esc(t('nRec'))}</div>
-      <div class="kpi"><b>${one.length}</b>${esc(t('nOne'))}</div>
-    </div>
-    <h2>${esc(img.title)}</h2>
-    ${img.url ? `<img id="repImg" src="${img.url}" alt="">` : `<div class="meta">${esc(t('empty'))}</div>`}
-    <h2>${esc(t('repLog'))}</h2>
+  const snapHtml = (sn, first) => `<h2 class="pg${first ? ' sec1' : ''}">${esc(t(PDF_NAME[sn.name]))}</h2>` +
+    sn.imgs.map(i => `<h3>${esc(i.title)}</h3><img class="c" src="${i.url}" alt="">`).join('') + (sn.table || `<div class="meta">${esc(t('empty'))}</div>`);
+  const logHtml = `<h2 class="${prevTab === 'overview' ? 'pg' : ''}">${esc(t('repLog'))}</h2>
     <table><thead><tr><th>${esc(t('time'))}</th><th>${esc(t('factory'))}</th><th>${esc(t('machine'))}</th>
       <th>${esc(t('issue'))}</th><th>${esc(t('solution'))}</th><th>${esc(t('times'))}</th></tr></thead>
       <tbody>${band('rec', t('rec'), rec.length)}${rec.map(tr).join('')}${band('one', t('one'), one.length)}${one.map(tr).join('')}</tbody></table>`;
+  const kpis = `<div class="kpis">
+      <div class="kpi"><b>${rows.length}</b>${esc(t('total'))}</div>
+      <div class="kpi"><b>${recTypes}</b>${esc(t('nRec'))}</div>
+      <div class="kpi"><b>${one.length}</b>${esc(t('nOne'))}</div>
+    </div>`;
+  let body = '';
+  if (prevTab === 'overview') body = `<h2>${esc(img.title)}</h2>` + (img.url ? `<img id="repImg" class="c" src="${img.url}" alt="">` : `<div class="meta">${esc(t('empty'))}</div>`) +
+    snaps.map(sn => snapHtml(sn, false)).join('') + logHtml;
+  else if (prevTab === 'log') body = logHtml;
+  else body = snaps.map(sn => snapHtml(sn, true)).join('');
+  $('report').innerHTML = `
+    <h1>${esc(t('repTitle'))}${prevTab === 'overview' ? '' : ' – ' + esc(t(PDF_NAME[prevTab]))}</h1>
+    <div class="meta">${esc(filt)}</div>
+    <div class="meta">${esc(t('generated'))}: ${new Date().toLocaleString(lang === 'zh' ? 'zh-CN' : 'en-GB')}</div>
+    ${showLog ? kpis : ''}${body}`;
   const im = $('repImg');
   return im && im.decode ? im.decode().catch(() => {}) : Promise.resolve();
 }
@@ -1301,8 +1339,23 @@ function reportData() {                              // chart data + table of th
 function saveBlob(blob, name) {
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); URL.revokeObjectURL(a.href);
 }
+function exportModulesCSV() {                         // one row per module period; \"Current module\" is filled on every row of the machine
+  const f = $('fFactory').value, m = $('fMachine').value, br = $('fBrand').value, mo = $('fModel').value;
+  const h = HISTORY.filter(r => (!f || r.factory === f) && (!m || r.machineKey === m) && (!br || r.brandEn === br) && (!mo || r.model === mo));
+  const by = new Map(); h.forEach(r => { (by.get(r.machineKey) || by.set(r.machineKey, []).get(r.machineKey)).push(r); });
+  const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"', mod = r => r.product || t('modNotRec');
+  const lines = [['Factory', 'Machine', 'Module', 'First logged', 'Last logged', 'Events', 'Status', 'Changed to', 'Changed on', 'Current module'].map(q).join(',')];
+  [...by.values()].sort((a, b) => FACTORIES.indexOf(a[0].factory) - FACTORIES.indexOf(b[0].factory) || natCmp(a[0].machineRaw + ' ' + a[0].machineNo, b[0].machineRaw + ' ' + b[0].machineNo)).forEach(g => {
+    g.sort((a, b) => a.from < b.from ? -1 : 1);
+    const cur = g.find(r => r.current) || g[g.length - 1];
+    g.forEach(r => lines.push([r.factory, r.machineRaw + (r.machineNo ? ' ' + r.machineNo : ''), mod(r), dmy(r.from), dmy(r.to), r.events,
+      r.current ? 'Current' : 'Changed', r.current ? '' : (r.nextProduct || t('modNotRec')), r.current ? '' : dmy(r.changedAt), mod(cur)].map(q).join(',')));
+  });
+  saveBlob(new Blob(['\uFEFF' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' }), 'report-modules-' + new Date().toISOString().slice(0, 10) + '.csv');
+}
 function exportCSV() {                               // CSV is plain text: chart *data* + table (no picture possible)
   if (tab === 'log') return exportLogCSV();
+  if (tab === 'modules') return exportModulesCSV();
   const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"', row = a => a.map(q).join(',');
   const d = reportData(), out = [];
   if (d.chartRows.length) { out.push(row(['Chart', d.title])); d.chartRows.forEach(r => out.push(row(r))); }
@@ -1437,9 +1490,9 @@ $('saveDlg').addEventListener('click', e => { if (e.target === $('saveDlg')) $('
 $('imgClose').onclick = () => $('imgDlg').close();
 $('imgDlg').addEventListener('click', e => { if (e.target === $('imgDlg')) $('imgDlg').close(); });
 $('btnCsv').onclick = exportCSV;
-$('btnXlsx').onclick = exportXLSX;
-$('btnPrint').onclick = () => buildReport().then(() => window.print());
-window.addEventListener('beforeprint', () => { buildReport(); });   // Ctrl+P gets the same report
+let reportBuilt = false;
+$('btnPrint').onclick = () => buildReport().then(() => { reportBuilt = true; window.print(); });
+window.addEventListener('beforeprint', () => { if (reportBuilt) { reportBuilt = false; return; } buildReport(); });   // Ctrl+P gets the same report
 
 /* ================== DEMO DATA (used only when GAS_URL is empty) ================== */
 function demoBase() {
