@@ -35,6 +35,19 @@
   #tblModel td.gname{font-weight:600;background:var(--panel2);vertical-align:top;width:28%}
   #tblModel td.cnt{text-align:right;font-weight:700;width:90px}
   .lbl{font-size:11px;color:var(--muted)}
+  .mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px;margin-bottom:10px}
+  .mcard{text-align:left;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;color:var(--text);cursor:pointer;display:block;width:100%}
+  .mcard:hover,.mcard.on{border-color:var(--accent)}
+  .mcard .mt{font-weight:600;font-size:13px;margin-bottom:2px;word-break:break-word}
+  .mcard .ms{font-size:11px;color:var(--muted)}
+  .mcard .mcur{margin-top:6px;font-size:12px}
+  .mcard .mcur b,.mdet .mcur b{color:var(--accent)}
+  .mdet{border:1px solid var(--accent);border-radius:8px;padding:12px;background:var(--panel2)}
+  .mdet .mcur{font-size:14px;margin:6px 0 10px}
+  .mtl{margin:6px 0 0 6px;padding:0;list-style:none;border-left:2px solid var(--line)}
+  .mtl li{position:relative;padding:3px 0 9px 14px;font-size:12px}
+  .mtl li:before{content:"";position:absolute;left:-6px;top:8px;width:10px;height:10px;border-radius:50%;background:var(--line)}
+  .mtl li.cur:before{background:var(--accent)}
   .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
   dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:16px;width:min(460px,92vw)}
   #imgDlg{width:min(980px,96vw)}
@@ -192,7 +205,17 @@
   <section class="view panel p-3 hidden" data-view="modules">
     <div class="flex items-center justify-between mb-1 gap-2"><div class="font-semibold" data-i18n="modTitle"></div><span id="modCount" class="lbl"></span></div>
     <p class="lbl mb-2" data-i18n="modNote"></p>
-    <div class="scroll">
+    <div class="flex items-center gap-2 mb-2">
+      <button class="btn primary" id="modVCards" data-i18n="modViewCards"></button>
+      <button class="btn" id="modVTable" data-i18n="modViewTable"></button>
+    </div>
+    <div id="modCardsWrap">
+      <div class="flex items-center gap-1 flex-wrap text-xs mb-2"><button class="btn" id="modBack" style="display:none"></button><div id="modCrumb" class="flex items-center gap-1 flex-wrap"></div></div>
+      <div class="lbl mb-2" id="modHint"></div>
+      <div id="modGrid" class="mgrid"></div>
+      <div id="modDetail"></div>
+    </div>
+    <div class="scroll" id="modTableWrap" style="display:none">
       <table class="w-full" id="tblMod">
         <thead><tr><th data-i18n="factory"></th><th data-i18n="machine"></th><th data-i18n="colModule"></th><th data-i18n="colFirst"></th><th data-i18n="colLast"></th><th class="text-right" data-i18n="colEvents"></th><th data-i18n="colStatus"></th></tr></thead>
         <tbody></tbody>
@@ -256,7 +279,7 @@
 /* ================== CONFIG ================== */
 // Paste your deployed Web App URL (…/exec). Leave empty to preview with demo data.
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxNht563H7COeUnwfF4NUImMsv3bFGoIpiHsE4h1tTrPFemxnskTOBsCw02zQ-ts7G8/exec';
-const APP_VERSION = 'v29-2026-11-09';
+const APP_VERSION = 'v30-2026-11-10';
 const MODEL_SORT_ASC = false;   // Model Summary tab: true = fewest -> most (as in the spec). false = most -> fewest   // shown under the title so you can tell which file is live
 const FACTORIES = ['Ayutthaya', 'Terahop 5000', 'Pinewave'];
 const FCOLOR = { 'Ayutthaya': '#2dd4bf', 'Terahop 5000': '#f59e0b', 'Pinewave': '#a78bfa' };
@@ -279,12 +302,12 @@ const I18N = {
     dtPick1:'Click a bar or a model name to see its machines.', dtPick2:'Click a bar or a machine name to see that machine’s top 5 downtime issues.',
     dtPick3:'Top 5 issues by downtime. Click a bar to list only its cases; click again to clear.',
     dtT2:'Downtime per machine', dtT3:'Top 5 downtime issues', dtTblT2:'Top 5 downtime issues of each machine', dtTblT3:'Downtime events (longest first)', dtEvents:'Downtime events', dtAvg:'Average per event', dtLongest:'Longest event',
-    dtByModel:'Downtime by model (minutes)', dtByDay:'Downtime per day (minutes)', dtTblTitle:'Longest downtime events', colMin:'Minutes',
+    dtByModel:'Downtime by model (minutes)', dtByDay:'Downtime per day (minutes)', dtTblTitle:'Longest downtime events', colMin:'Minutes', colReported:'Reported', colFinished:'Finished',
     dtHint:'From the 维修总时间(min) column. Bars are split by factory. Rows with an error or a negative value are left out.',
     dtEmpty:'No downtime data. Check that the 维修总时间(min) column has numbers.', dtSkipped:'rows left out (error / negative)',
     modTitle:'Machine module history', modNote:'Built from the logged problems: a module runs from the first time it is logged on the machine until the last log before the next module. The date filter is not applied here.',
     colModule:'Module', colFirst:'First logged', colLast:'Last logged', colEvents:'Events', colStatus:'Status', stCurrent:'Current', stChangedTo:'Changed to',
-    modMachines:'machines', modChanges:'module changes', modEmpty:'No module data yet (column 机种 / module).',
+    modMachines:'machines', modChanges:'module changes', modViewCards:'Cards', modViewTable:'Table', modLvB:'brand', modLvM:'model', modLvV:'version', modLvK:'machine', modPick:'Choose', modNow:'Running now', modSince:'since', modLastLog:'last logged', modLogs:'logs', modFirst:'first logged', modTlTitle:'Module changes', modNoChange:'No module change logged yet.', modDateNote:'Dates come from the repair logs: a module is dated from the first log that mentions it, so the real change may be a little earlier.', modEmpty:'No module data yet (column 机种 / module).',
     remTitle:'Remarks per machine', remNote:'Machines whose 备注 (remark) column has text. Text that only repeats the machine name is ignored.', remEmpty:'No remarks in this period.', colRemark:'Remark',
     topTitle:'Top 3 most recurring issues per machine', topNote:'Rank 1 = most frequent. Only issues that occurred 2+ times are listed; tied issues share the same rank.',
     issue:'Issue', times:'Times', logTitle:'Full issue log', time:'Time', solution:'Solution',
@@ -307,12 +330,12 @@ const I18N = {
     dtPick1:'点击柱子或机型名称，查看该机型的机器。', dtPick2:'点击柱子或机器名称，查看该机器停机时间最长的前5个问题。',
     dtPick3:'停机时间最长的前5个问题。点击柱子只看该问题的记录；再点一次取消。',
     dtT2:'各机器停机时间', dtT3:'停机时间最长的前5个问题', dtTblT2:'各机器停机时间最长的前5个问题', dtTblT3:'停机记录（时间最长在前）', dtEvents:'停机次数', dtAvg:'平均每次', dtLongest:'最长一次',
-    dtByModel:'各机型停机时间（分钟）', dtByDay:'每日停机时间（分钟）', dtTblTitle:'停机时间最长的记录', colMin:'分钟',
+    dtByModel:'各机型停机时间（分钟）', dtByDay:'每日停机时间（分钟）', dtTblTitle:'停机时间最长的记录', colMin:'分钟', colReported:'报修时间', colFinished:'修复完成',
     dtHint:'来自“维修总时间(min)”列。柱子按工厂分色。出错或为负数的行不计入。',
     dtEmpty:'没有停机数据。请检查“维修总时间(min)”列是否有数字。', dtSkipped:'行未计入（错误/负数）',
     modTitle:'机器机种履历', modNote:'根据问题记录推算：某机种从该机器第一次出现记录起，到下一个机种出现前的最后一次记录为止。此处不使用日期筛选。',
     colModule:'机种', colFirst:'首次记录', colLast:'最后记录', colEvents:'记录数', colStatus:'状态', stCurrent:'当前', stChangedTo:'改为',
-    modMachines:'台机器', modChanges:'次机种更换', modEmpty:'暂无机种数据（机种列）。',
+    modMachines:'台机器', modChanges:'次机种更换', modViewCards:'卡片', modViewTable:'表格', modLvB:'品牌', modLvM:'机型', modLvV:'版本', modLvK:'机台', modPick:'请选择', modNow:'当前机种', modSince:'自', modLastLog:'最后记录', modLogs:'条记录', modFirst:'首次记录', modTlTitle:'机种更换记录', modNoChange:'暂无机种更换记录。', modDateNote:'日期来自维修记录：机种以首次出现该机种的记录日期为准，实际更换可能稍早。', modEmpty:'暂无机种数据（机种列）。',
     remTitle:'各机器备注', remNote:'“备注”列有内容的机器。仅重复机器名称的内容会被忽略。', remEmpty:'本期间没有备注。', colRemark:'备注',
     topTitle:'各机器重复发生最多的前3大问题', topNote:'名次1 = 发生最多。仅列出发生2次及以上的问题，并列的问题名次相同。',
     issue:'问题', times:'次数', logTitle:'完整问题记录', time:'时间', solution:'解决方法',
@@ -387,7 +410,7 @@ function filtered(withNoMachine) {                   // withNoMachine: also the 
 function render() {
   applyChrome();
   const rows = filtered();
-  renderCards(rows); renderChart(rows); renderTop(rows); renderModelTab(rows); renderDowntime(rows); renderModules(); renderRemarks(rows); renderLog(filtered(true));
+  renderCards(rows); renderChart(rows); renderTop(rows); renderModelTab(rows); renderDowntime(rows); renderModules(); renderModuleCards(); renderRemarks(rows); renderLog(filtered(true));
 }
 function applyChrome() {
   document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
@@ -926,13 +949,13 @@ function renderDowntime(rows) {
   const okAll = rows.filter(okMin), skipped = rows.filter(r => typeof r.repairMinutes === 'number' && r.repairMinutes < 0).length;
   if (dtChartInst) { dtChartInst.destroy(); dtChartInst = null; } if (dtChart2Inst) { dtChart2Inst.destroy(); dtChart2Inst = null; }
   const body = $('tblDt').tBodies[0];
-  const headEvents = `<tr><th>${esc(t('time'))}</th><th>${esc(t('factory'))}</th><th>${esc(t('machine'))}</th><th>${esc(t('issue'))}</th><th class="text-right">${esc(t('colMin'))}</th></tr>`;
+  const headEvents = `<tr><th>${esc(t('colReported'))}</th><th>${esc(t('colFinished'))}</th><th>${esc(t('factory'))}</th><th>${esc(t('machine'))}</th><th>${esc(t('issue'))}</th><th class="text-right">${esc(t('colMin'))}</th></tr>`;
   $('tblDt').tHead.innerHTML = headEvents;
   if (!okAll.length) {
     $('dtTitle').textContent = t('dtByModel'); $('dtTitle2').textContent = t('dtByDay'); $('dtTblTitle').textContent = t('dtTblTitle'); $('dtHint').textContent = '';
     $('dBack').style.display = 'none'; $('dtCrumb').innerHTML = ''; dtCtx.onPick = null;
     $('dtCards').innerHTML = ''; $('dtWrap').style.display = 'none'; $('dtWrap2').style.display = 'none';
-    body.innerHTML = `<tr><td colspan="5" class="text-center lbl">${esc(t('dtEmpty'))}</td></tr>`; return;
+    body.innerHTML = `<tr><td colspan="6" class="text-center lbl">${esc(t('dtEmpty'))}</td></tr>`; return;
   }
   // where are we? (reset the path when a filter removed what we were looking at)
   let base = okAll;
@@ -959,7 +982,7 @@ function renderDowntime(rows) {
   let items = [], title = '', hint = '', tblTitle = '', head = headEvents, html = '', crumb = '', issFullTxt = '';
   const root = `<button class="btn" data-dnav="root">${esc(t('mAll'))}</button>`, sep = '<span class="lbl">›</span>';
   const facDots = (byF, show) => FACTORIES.filter(f => byF[f]).map(f => `<span class="dot" style="background:${FCOLOR[f]}"></span>${esc(f)}${show ? ' ' + Math.round(byF[f]) : ''}`).join(' &nbsp; ');
-  const evRow = r => `<tr class="align-top"><td class="whitespace-nowrap">${esc(dmy(r.timestamp))}</td>
+  const evRow = r => `<tr class="align-top"><td class="whitespace-nowrap">${esc(dmy(r.timestamp))}</td><td class="whitespace-nowrap">${esc(r.recoveryEnd ? dmy(r.recoveryEnd) : '—')}</td>
     <td class="whitespace-nowrap"><span class="dot" style="background:${FCOLOR[r.factory]}"></span>${esc(r.factory)}</td>
     <td>${esc(mName(r))}</td><td>${esc(r.issueEn || r.issueRaw)}</td><td class="text-right font-semibold">${Math.round(r.repairMinutes)}</td></tr>`;
 
@@ -1040,6 +1063,101 @@ function renderModules() {
        <td>${r.current ? `<b style="color:var(--accent)">${esc(t('stCurrent'))}</b>` : `<span class="lbl">${esc(t('stChangedTo'))}</span> ${esc(r.nextProduct)} <span class="lbl">· ${esc(dmy(r.changedAt))}</span>`}</td></tr>`).join('');
   }).join('') || `<tr><td colspan="7" class="text-center lbl">${esc(t('modEmpty'))}</td></tr>`;
 }
+
+// ---- Machine Modules as step-by-step cards: brand > model > version > machine, then that machine's module history ----
+let modNav = { b: null, m: null, v: null, k: null }, modView = 'cards', modLvl = 0, modSkipped = {};
+const MOD_KEYS = ['b', 'm', 'v', 'k'];
+const MOD_VAL = {
+  b: x => ({ key: x.brandEn, label: pick(x.brandEn, x.brandCn) || '—' }),
+  m: x => ({ key: x.fnEn, label: pick(x.fnEn, x.fnCn) || '—' }),          // model = machine type / function (ISO, COVER, ...)
+  v: x => ({ key: x.ver, label: x.ver || '—' })                           // version = the (1.0) / (2.5) part of the machine name
+};
+function modMachines() {                                                    // same filters as the table above
+  const f = $('fFactory').value, m = $('fMachine').value, br = $('fBrand').value, mo = $('fModel').value;
+  const h = HISTORY.filter(r => (!f || r.factory === f) && (!m || r.machineKey === m) && (!br || r.brandEn === br) && (!mo || r.model === mo));
+  const dr = new Map(); DATA.forEach(r => { if (!dr.has(r.machineKey)) dr.set(r.machineKey, r); });
+  const g = new Map();
+  h.forEach(r => { (g.get(r.machineKey) || g.set(r.machineKey, []).get(r.machineKey)).push(r); });
+  return [...g.entries()].map(([key, ps]) => {
+    ps.sort((a, b) => a.from < b.from ? -1 : 1);
+    const r0 = ps[0], d = dr.get(key) || {};
+    return { key, factory: r0.factory, raw: r0.machineRaw, no: r0.machineNo, brandEn: r0.brandEn || '', brandCn: r0.brandCn || '',
+      fnEn: d.functionEn || '', fnCn: d.functionCn || '', ver: r0.model || '', ps, cur: ps[ps.length - 1], changes: ps.length - 1 };
+  }).sort((a, b) => FACTORIES.indexOf(a.factory) - FACTORIES.indexOf(b.factory) || natCmp(a.raw + ' ' + a.no, b.raw + ' ' + b.no));
+}
+function applyModView() {
+  $('modCardsWrap').style.display = modView === 'cards' ? '' : 'none';
+  $('modTableWrap').style.display = modView === 'table' ? '' : 'none';
+  $('modVCards').classList.toggle('primary', modView === 'cards'); $('modVTable').classList.toggle('primary', modView === 'table');
+}
+function renderModuleCards() {
+  applyModView();
+  const all = modMachines(), names = { b: t('modLvB'), m: t('modLvM'), v: t('modLvV'), k: t('modLvK') };
+  let ms = all, lvl = 0; modSkipped = {};
+  for (; lvl < 3; lvl++) {                                                  // apply the choices made so far
+    const k = MOD_KEYS[lvl];
+    if (modNav[k] === null) break;
+    const nx = ms.filter(x => MOD_VAL[k](x).key === modNav[k]);
+    if (!nx.length) { for (let j = lvl; j < 4; j++) modNav[MOD_KEYS[j]] = null; break; }
+    ms = nx;
+  }
+  while (lvl < 3) {                                                         // a level with only an empty value is skipped (e.g. no version)
+    const k = MOD_KEYS[lvl];
+    if (new Set(ms.map(x => MOD_VAL[k](x).key)).size === 1 && MOD_VAL[k](ms[0] || {}).key === '') { modNav[k] = ''; modSkipped[lvl] = true; lvl++; } else break;
+  }
+  modLvl = lvl;
+  const sep = '<span class="lbl">›</span>';
+  let crumb = `<button class="btn" data-mcrumb="-1">${esc(t('mAll'))}</button>`;
+  for (let j = 0; j < Math.min(lvl, 3); j++) {
+    if (modSkipped[j]) continue;
+    const x = ms[0]; crumb += sep + `<button class="btn" data-mcrumb="${j}">${esc(x ? MOD_VAL[MOD_KEYS[j]](x).label : '—')}</button>`;
+  }
+  if (lvl === 3 && modNav.k) { const mk = ms.find(x => x.key === modNav.k); if (mk) crumb += sep + `<span class="font-semibold px-1">${esc(mk.raw + (mk.no ? ' ' + mk.no : ''))}</span>`; }
+  $('modCrumb').innerHTML = crumb;
+  $('modBack').textContent = t('mBack'); $('modBack').style.display = (lvl > 0 && Object.keys(modNav).some(k => modNav[k] !== null && !modSkipped[MOD_KEYS.indexOf(k)])) ? '' : 'none';
+  $('modHint').textContent = `${t('modPick')}: ${names[MOD_KEYS[lvl]]}`;
+  if (!ms.length) { $('modGrid').innerHTML = `<div class="lbl">${esc(t('modEmpty'))}</div>`; $('modDetail').innerHTML = ''; return; }
+  if (lvl < 3) {                                                            // brand / model / version cards
+    const k = MOD_KEYS[lvl], g = new Map();
+    ms.forEach(x => { const v = MOD_VAL[k](x), e = g.get(v.key) || { key: v.key, label: v.label, n: 0, ch: 0 }; e.n++; e.ch += x.changes; g.set(v.key, e); });
+    $('modGrid').innerHTML = [...g.values()].sort((a, b) => natCmp(a.label, b.label)).map(e =>
+      `<button class="mcard" data-mk="${esc(e.key)}"><div class="mt">${esc(e.label)}</div><div class="ms">${e.n} ${esc(t('modMachines'))} · ${e.ch} ${esc(t('modChanges'))}</div></button>`).join('');
+    $('modDetail').innerHTML = '';
+    return;
+  }
+  $('modGrid').innerHTML = ms.map(x =>                                      // machine cards
+    `<button class="mcard ${x.key === modNav.k ? 'on' : ''}" data-mk="${esc(x.key)}"><div class="mt"><span class="dot" style="background:${FCOLOR[x.factory]}"></span>${esc(x.raw + (x.no ? ' ' + x.no : ''))}</div>
+      <div class="ms">${esc(x.factory)}</div><div class="mcur">${esc(t('modNow'))}: <b>${esc(x.cur.product)}</b><div class="ms">${esc(t('modSince'))} ${esc(dmy(x.cur.from))}</div></div>
+      <div class="ms">${x.changes} ${esc(t('modChanges'))}</div></button>`).join('');
+  const sel = ms.find(x => x.key === modNav.k);
+  if (!sel) { $('modDetail').innerHTML = ''; return; }
+  const tl = [...sel.ps].map((p, i) => ({ p, i })).reverse().map(({ p, i }) => {      // newest first
+    const what = i === 0 ? `<b>${esc(p.product)}</b> <span class="lbl">(${esc(t('modFirst'))})</span>` : `${esc(sel.ps[i - 1].product)} → <b>${esc(p.product)}</b>`;
+    return `<li class="${p.current ? 'cur' : ''}"><b>${esc(dmy(p.from))}</b> — ${what}<div class="lbl">${esc(dmy(p.from))} → ${esc(dmy(p.to))} · ${p.events} ${esc(t('modLogs'))}${p.current ? ' · ' + esc(t('modNow')) : ''}</div></li>`;
+  }).join('');
+  $('modDetail').innerHTML = `<div class="mdet"><div class="font-semibold"><span class="dot" style="background:${FCOLOR[sel.factory]}"></span>${esc(sel.factory)} · ${esc(sel.raw + (sel.no ? ' ' + sel.no : ''))}</div>
+    <div class="lbl">${esc([pick(sel.brandEn, sel.brandCn), pick(sel.fnEn, sel.fnCn), sel.ver].filter(Boolean).join(' · '))}</div>
+    <div class="mcur">${esc(t('modNow'))}: <b>${esc(sel.cur.product)}</b> <span class="lbl">${esc(t('modSince'))} ${esc(dmy(sel.cur.from))} · ${esc(t('modLastLog'))} ${esc(dmy(sel.cur.to))}</span></div>
+    <div class="font-semibold">${esc(t('modTlTitle'))} (${sel.changes})</div>
+    ${sel.changes ? '' : `<div class="lbl">${esc(t('modNoChange'))}</div>`}<ul class="mtl">${tl}</ul><div class="lbl mt-2">${esc(t('modDateNote'))}</div></div>`;
+}
+$('modVCards').onclick = () => { modView = 'cards'; applyModView(); };
+$('modVTable').onclick = () => { modView = 'table'; applyModView(); };
+$('modGrid').onclick = e => {
+  const c = e.target.closest('[data-mk]'); if (!c) return;
+  if (modLvl < 3) { for (let j = modLvl; j < 4; j++) modNav[MOD_KEYS[j]] = null; modNav[MOD_KEYS[modLvl]] = c.dataset.mk; } else modNav.k = c.dataset.mk;
+  renderModuleCards();
+};
+$('modCrumb').onclick = e => {
+  const b = e.target.closest('[data-mcrumb]'); if (!b) return; const j = +b.dataset.mcrumb;
+  for (let q = j + 1; q < 4; q++) modNav[MOD_KEYS[q]] = null;
+  renderModuleCards();
+};
+$('modBack').onclick = () => {
+  if (modNav.k) { modNav.k = null; renderModuleCards(); return; }
+  for (let j = 2; j >= 0; j--) if (modNav[MOD_KEYS[j]] !== null && !modSkipped[j]) { for (let q = j; q < 4; q++) modNav[MOD_KEYS[q]] = null; break; }
+  renderModuleCards();
+};
 
 function renderRemarks(rows) {
   const rr = rows.filter(r => r.remark).sort((a, b) => natCmp(a.factory + '|' + mName(a), b.factory + '|' + mName(b)) || (a.timestamp < b.timestamp ? -1 : 1));
